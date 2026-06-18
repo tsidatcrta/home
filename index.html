@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TSID Welfy — คนสำราญ งานสำเร็จ สวัสดิการเด่น กำลังพลเป็นสุข</title>
+    <title>TSID Welfy — คนสำราญ งานสำเร็จ</title>
     <!-- Tailwind CSS with custom darkMode class support -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -25,7 +25,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body {
-            font-family: 'Sarabun', 'Inter', sans-serif;
+            /* ใช้ฟอนต์ระบบของ iOS (Sukhumvit Set) และ Android (Roboto/Noto Sans) ทันที */
+            font-family: -apple-system, BlinkMacSystemFont, "Sukhumvit Set", "Thonburi", "Helvetica Neue", Arial, sans-serif;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
         .apple-blur {
@@ -62,7 +63,7 @@
                 </div>
                 <div>
                     <span class="text-base font-bold tracking-tight text-neutral-950 dark:text-white block leading-none">TSID Welfy</span>
-                    <span class="text-[10px] text-amber-500 font-semibold uppercase tracking-wider">คนสำราญ งานสำเร็จ สวัสดิการเด่น กำลังพลเป็นสุข</span>
+                    <span class="text-[12px] text-amber-200 font-semibold uppercase tracking-wider">คนสำราญ งานสำเร็จ</span>
                 </div>
             </div>
             
@@ -131,7 +132,7 @@
                                 <span id="evt-time" class="font-medium text-neutral-750 dark:text-neutral-300">...</span>
                             </span>
                             <span class="flex items-center gap-1">
-                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-500"></i>
+                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400"></i>
                                 <span id="evt-location" class="font-bold text-amber-600 dark:text-amber-400">...</span>
                             </span>
                         </div>
@@ -141,7 +142,7 @@
                     
                     <div class="flex items-center gap-4 bg-zinc-100/70 dark:bg-neutral-900/30 p-3 rounded-xl border border-zinc-200 dark:border-neutral-800/60 shrink-0">
                         <div class="space-y-0.5">
-                            <span class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold">ความคืบหน้า</span>
+                            <span class="text-[14px] text-neutral-400 dark:text-neutral-500 uppercase font-bold">ความคืบหน้า</span>
                             <div class="flex items-baseline gap-1">
                                 <span id="stat-replied-count" class="text-2xl font-bold text-neutral-950 dark:text-white">0</span>
                                 <span class="text-neutral-400">/</span>
@@ -168,11 +169,11 @@
             <!-- List of Participants (Optimized Mobile Strip Design - Hidden/Shown on click of Activity Card) -->
             <div id="participant-list-container" class="space-y-2.5 hidden transition-all duration-300">
                 <div class="flex items-center justify-between px-1">
-                    <h2 class="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <h2 class="text-sm font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
                         <i data-lucide="users" class="w-3.5 h-3.5 text-neutral-400"></i>
                         รายชื่อกำลังพลหลัก
                     </h2>
-                    <span class="text-[10px] text-neutral-400 dark:text-neutral-500">แตะเพื่อสั่งเมนู / ตอบรับ</span>
+                    <span class="text-[12px] text-neutral-400 dark:text-neutral-500">แตะเพื่อสั่งเมนู / ตอบรับ</span>
                 </div>
 
                 <!-- Touch Friendly Grid System -->
@@ -440,16 +441,16 @@
 
             <!-- Modal Header -->
             <div class="space-y-1.5 mb-5 pr-6">
-                <div class="text-[10px] font-bold uppercase tracking-wider text-amber-500" id="modal-response-badge-title">บันทึกความจำนงและการตอบรับ</div>
-                <h3 id="modal-user-name" class="text-lg font-bold text-neutral-950 dark:text-white leading-tight">...</h3>
-                <p id="modal-event-context" class="text-[11px] text-neutral-500 dark:text-neutral-400">...</p>
+                <div class="text-[16px] font-bold uppercase tracking-wider text-amber-500" id="modal-response-badge-title">บันทึกความจำนงและการตอบรับ</div>
+                <h3 id="modal-user-name" class="text-[22px] font-bold text-neutral-950 dark:text-white leading-tight">...</h3>
+                <p id="modal-event-context" class="text-[14px] text-neutral-500 dark:text-neutral-400">...</p>
             </div>
 
             <!-- Modal Forms -->
             <div class="space-y-5">
                 <!-- Status Choice buttons dynamically rendered based on event type configuration -->
                 <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">ประเภทความต้องการการเข้าร่วม</label>
+                    <label class="text-[16px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">ประเภทความต้องการการเข้าร่วม</label>
                     <div class="grid grid-cols-3 gap-1.5">
                         <button onclick="setModalStatus('join')" id="opt-status-join" class="py-2.5 px-1.5 rounded-lg border border-zinc-200 dark:border-neutral-800 bg-zinc-50 dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 text-center text-xs font-semibold flex flex-col items-center gap-1 transition-all active-tap">
                             <i data-lucide="check-square" class="w-3.5 h-3.5 text-emerald-500 animate-pulse"></i>
@@ -469,14 +470,14 @@
                 <!-- Specific Item input context -->
                 <div id="order-inputs-container" class="space-y-3.5">
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">ระบุรายการอาหาร / เครื่องดื่ม</label>
-                        <input type="text" id="modal-order-input" class="w-full bg-zinc-50 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-amber-500" placeholder="ระบุเมนูที่ต้องการ เช่น อเมริกาโน่ร้อน หวานน้อย">
-                        <p class="text-[10px] text-neutral-400 dark:text-neutral-500">ใส่ระดับความหวาน ความเผ็ด หรือรายละเอียดอื่นๆ เพิ่มได้</p>
+                        <label class="text-[16px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">ระบุรายการอาหาร / เครื่องดื่ม</label>
+                        <input type="text" id="modal-order-input" class="w-full bg-zinc-50 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xl text-neutral-900 dark:text-white focus:outline-none focus:border-amber-500" placeholder="ระบุเมนูที่ต้องการ เช่น อเมริกาโน่ร้อน หวานน้อย">
+                        <p class="text-[14px] text-neutral-400 dark:text-neutral-500">ใส่ระดับความหวาน ความเผ็ด หรือรายละเอียดอื่นๆ เพิ่มได้</p>
                     </div>
 
                     <!-- Preset popular food tags configured by admin -->
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider block">เลือกเมนูยอดฮิตด่วน:</label>
+                        <label class="text-[14px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider block">เลือกเมนูยอดฮิตด่วน:</label>
                         <div class="flex flex-wrap gap-1" id="preset-dynamic-tags">
                             <!-- Populates dynamically -->
                         </div>
@@ -918,7 +919,7 @@
 
             if (state.participants.length === 0) {
                 grid.innerHTML = `
-                    <div class="col-span-full text-center py-10 text-neutral-500 text-xs italic">
+                    <div class="col-span-full text-center py-10 text-neutral-500 text-sm italic">
                         ไม่มีข้อมูลรายชื่อกำลังพลหลัก กรุณาเพิ่มรายชื่อในแผงควบคุมระบบ
                     </div>
                 `;
@@ -950,8 +951,8 @@
                     <div class="flex items-center gap-2.5 overflow-hidden flex-1">
                         <span class="w-2.5 h-2.5 rounded-full ${dotColor} shrink-0 shadow-sm animate-pulse"></span>
                         <div class="truncate">
-                            <h4 class="text-xs font-bold text-neutral-900 dark:text-white">${name}</h4>
-                            <p class="text-[10px] text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                            <h4 class="text-sm font-bold text-neutral-900 dark:text-white">${name}</h4>
+                            <p class="text-[12px] text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
                                 ${response.order ? response.order : getStatusText(response.status)}
                             </p>
                         </div>
@@ -1126,7 +1127,7 @@
                 row.innerHTML = `
                     <div class="space-y-1 overflow-hidden pr-2 flex-grow">
                         <div class="flex flex-wrap items-center gap-1.5">
-                            <span class="text-xs font-bold text-neutral-900 dark:text-white">${name}</span>
+                            <span class="text-sm font-bold text-neutral-900 dark:text-white">${name}</span>
                             <span class="text-[10px] ${statusColorText}">(${statusLabel})</span>
                         </div>
                         <div class="text-[11px] font-medium text-neutral-600 dark:text-neutral-400 truncate">
