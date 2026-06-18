@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TSID Welfy — คนสำราญ งานสำเร็จ สวัสดิการเด่น กำลังพลเป็นสุข</title>
+    <!-- Tailwind CSS with custom darkMode class support -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sarabun: ['Sarabun', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Sarabun & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Sarabun', 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .apple-blur {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(120, 120, 120, 0.05);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(120, 120, 120, 0.2);
+            border-radius: 10px;
+        }
+        /* Mobile tap effect reduction */
+        .active-tap:active {
+            transform: scale(0.97);
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body class="bg-zinc-50 dark:bg-black text-neutral-800 dark:text-neutral-200 min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-black">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 w-full border-b border-zinc-200 dark:border-neutral-900 bg-white/80 dark:bg-black/80 apple-blur transition-all duration-300">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2 cursor-pointer active-tap" onclick="switchTab('user-tab')">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-md">
+                    <i data-lucide="coffee" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <span class="text-base font-bold tracking-tight text-neutral-950 dark:text-white block leading-none">TSID Welfy</span>
+                    <span class="text-[10px] text-amber-500 font-semibold uppercase tracking-wider">คนสำราญ งานสำเร็จ สวัสดิการเด่น กำลังพลเป็นสุข</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleTheme()" class="w-8 h-8 rounded-full border border-zinc-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/40 hover:bg-zinc-100 dark:hover:bg-neutral-850 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white flex items-center justify-center transition-all active-tap" title="เปลี่ยนธีม">
+                    <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+                    <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
+                </button>
+
+                <!-- Admin Auth Indicator Button -->
+                <button onclick="toggleAdminAuthDirect()" class="h-8 px-2.5 rounded-lg border border-zinc-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/40 hover:bg-zinc-100 dark:hover:bg-neutral-850 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white flex items-center gap-1.5 transition-all text-xs active-tap" id="auth-status-btn">
+                    <i data-lucide="lock" class="w-3.5 h-3.5 text-rose-500" id="auth-lock-icon"></i>
+                    <span id="auth-status-text" class="hidden sm:inline">สิทธิ์แอดมิน</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Navigation Tabs (Touch Friendly Segment Controller) -->
+<div class="border-t border-zinc-200 dark:border-neutral-900 bg-zinc-100/50 dark:bg-neutral-950/40 py-1.5 px-4 flex justify-center">
+    <nav class="flex items-center gap-1 bg-zinc-200/60 dark:bg-neutral-900/80 p-0.5 rounded-xl border border-zinc-300 dark:border-neutral-800 w-full max-w-md">
+        
+        <button id="nav-user" onclick="switchTab('user-tab')" class="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 flex items-center justify-center gap-1 bg-white dark:bg-white text-black dark:text-black shadow-sm">
+            <i data-lucide="users" class="w-3.5 h-3.5"></i>
+            สั่งรายการ
+        </button>
+        
+        <button id="nav-summary" onclick="switchTab('summary-tab')" class="flex-1 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 flex items-center justify-center gap-1 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white">
+            <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i>
+            หน้าสรุปยอด
+        </button>
+        
+        <button id="nav-admin" onclick="switchTab('admin-tab')" class="flex-1 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 flex items-center justify-center gap-1 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white">
+            <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+            ควบคุมระบบ
+        </button>
+        
+    </nav>
+</div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4 md:py-6 space-y-6">
+
+        <!-- =================== TAB 1: USER TAB =================== -->
+        <section id="tab-user-tab" class="space-y-6 transition-all duration-300">
+            <!-- Active Event Banner card -->
+            <div id="active-event-card" onclick="toggleActiveEventExpansion()" class="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-neutral-800 bg-white dark:bg-gradient-to-b dark:from-neutral-900 dark:to-black p-5 md:p-6 shadow-md dark:shadow-xl transition-all duration-300 cursor-pointer active-tap hover:border-amber-500/50 dark:hover:border-amber-500/40">
+                <div class="absolute -right-10 -top-10 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+                    <div class="space-y-2 flex-grow">
+                        <div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-500 text-[10px] font-bold tracking-wider uppercase border border-amber-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                            กิจกรรมรับยอดปัจจุบัน
+                        </div>
+                        <h1 id="evt-title" class="text-xl md:text-2xl font-bold tracking-tight text-neutral-950 dark:text-white leading-snug">...</h1>
+                        
+                        <div class="flex flex-wrap gap-y-1.5 gap-x-3.5 text-xs text-neutral-500 dark:text-neutral-400">
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 text-neutral-400"></i>
+                                <span id="evt-date" class="font-medium text-neutral-750 dark:text-neutral-300">...</span>
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="clock" class="w-3.5 h-3.5 text-neutral-400"></i>
+                                <span id="evt-time" class="font-medium text-neutral-750 dark:text-neutral-300">...</span>
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-500"></i>
+                                <span id="evt-location" class="font-bold text-amber-600 dark:text-amber-400">...</span>
+                            </span>
+                        </div>
+                        
+                        <p id="evt-note" class="text-xs text-neutral-500 dark:text-neutral-400 italic pt-1.5 border-t border-zinc-100 dark:border-neutral-800/80"></p>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 bg-zinc-100/70 dark:bg-neutral-900/30 p-3 rounded-xl border border-zinc-200 dark:border-neutral-800/60 shrink-0">
+                        <div class="space-y-0.5">
+                            <span class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold">ความคืบหน้า</span>
+                            <div class="flex items-baseline gap-1">
+                                <span id="stat-replied-count" class="text-2xl font-bold text-neutral-950 dark:text-white">0</span>
+                                <span class="text-neutral-400">/</span>
+                                <span id="stat-total-count" class="text-xs text-neutral-500 dark:text-neutral-400 font-semibold">0</span>
+                                <span class="text-neutral-400 text-[10px]">คน</span>
+                            </div>
+                        </div>
+                        <div class="w-16 h-1.5 bg-zinc-200 dark:bg-neutral-800 rounded-full overflow-hidden relative">
+                            <div id="stat-progress-bar" class="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Touch disclosure footer indicator -->
+                <div class="mt-4 pt-3 border-t border-zinc-150 dark:border-neutral-900 flex items-center justify-between text-xs text-neutral-400 dark:text-neutral-500">
+                    <span class="flex items-center gap-1">
+                        <i data-lucide="hand" class="w-3.5 h-3.5"></i>
+                        <span id="expand-status-tip">แตะกิจกรรมนี้เพื่อ เปิดแสดงรายชื่อและสั่งเมนู</span>
+                    </span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300" id="active-event-chevron"></i>
+                </div>
+            </div>
+
+            <!-- List of Participants (Optimized Mobile Strip Design - Hidden/Shown on click of Activity Card) -->
+            <div id="participant-list-container" class="space-y-2.5 hidden transition-all duration-300">
+                <div class="flex items-center justify-between px-1">
+                    <h2 class="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="users" class="w-3.5 h-3.5 text-neutral-400"></i>
+                        รายชื่อกำลังพลหลัก
+                    </h2>
+                    <span class="text-[10px] text-neutral-400 dark:text-neutral-500">แตะเพื่อสั่งเมนู / ตอบรับ</span>
+                </div>
+
+                <!-- Touch Friendly Grid System -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" id="participant-action-grid">
+                    <!-- Dynamic Generation -->
+                </div>
+            </div>
+
+            <!-- History Section directly in Home page -->
+            <div class="pt-6 border-t border-zinc-200 dark:border-neutral-900">
+                <div class="flex items-center gap-1.5 px-1 mb-3">
+                    <i data-lucide="history" class="w-4 h-4 text-neutral-400"></i>
+                    <h2 class="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">ประวัติกิจกรรมก่อนหน้า</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="homepage-history-container">
+                    <!-- Dynamic history item blocks -->
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== TAB 2: SUMMARY TAB =================== -->
+        <section id="tab-summary-tab" class="space-y-5 hidden transition-all duration-300">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-neutral-950 dark:text-white" id="summary-main-title">สรุปยอดผู้รับสิทธิ์และเมนูอาหาร</h1>
+                    <p class="text-xs text-neutral-500 dark:text-neutral-400">สรุปสำหรับจัดส่งร้านค้า ประสานงานได้รวดเร็วขึ้น</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <button onclick="copySummaryToClipboard()" class="px-3 py-1.5 bg-white dark:bg-neutral-900 hover:bg-zinc-100 dark:hover:bg-neutral-800 border border-zinc-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all active-tap">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        คัดลอกข้อความสรุป
+                    </button>
+                    <button onclick="resetAllOrdersWithAuth()" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 hover:bg-rose-100 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all active-tap">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        รีเซ็ตทั้งหมด
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary KPI Dashboard Widgets -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div class="bg-white dark:bg-neutral-900/30 border border-zinc-200 dark:border-neutral-800/80 p-3 rounded-xl flex items-center justify-between shadow-sm">
+                    <div>
+                        <span class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold block" id="kpi-join-title">รับ / เข้าร่วม</span>
+                        <span id="sum-count-join" class="text-base font-bold text-emerald-600 dark:text-emerald-400">0 คน</span>
+                    </div>
+                    <div class="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center"><i data-lucide="check" class="w-3.5 h-3.5"></i></div>
+                </div>
+                <div class="bg-white dark:bg-neutral-900/30 border border-zinc-200 dark:border-neutral-800/80 p-3 rounded-xl flex items-center justify-between shadow-sm">
+                    <div>
+                        <span class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold block" id="kpi-absent-title">ไม่รับ / ติดภารกิจ</span>
+                        <span id="sum-count-absent" class="text-base font-bold text-rose-600 dark:text-rose-400">0 คน</span>
+                    </div>
+                    <div class="w-7 h-7 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center"><i data-lucide="x" class="w-3.5 h-3.5"></i></div>
+                </div>
+                <div class="bg-white dark:bg-neutral-900/30 border border-zinc-200 dark:border-neutral-800/80 p-3 rounded-xl flex items-center justify-between shadow-sm">
+                    <div>
+                        <span class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold block">ไม่แน่ใจ / สำรอง</span>
+                        <span id="sum-count-maybe" class="text-base font-bold text-amber-600 dark:text-amber-500">0 คน</span>
+                    </div>
+                    <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center"><i data-lucide="help-circle" class="w-3.5 h-3.5"></i></div>
+                </div>
+                <div class="bg-white dark:bg-neutral-900/30 border border-zinc-200 dark:border-neutral-800/80 p-3 rounded-xl flex items-center justify-between shadow-sm">
+                    <div>
+                        <span class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold block">ยังไม่ได้ตอบกลับ</span>
+                        <span id="sum-count-pending" class="text-base font-bold text-neutral-500 dark:text-neutral-400">0 คน</span>
+                    </div>
+                    <div class="w-7 h-7 rounded-full bg-zinc-200 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 flex items-center justify-center"><i data-lucide="clock" class="w-3.5 h-3.5"></i></div>
+                </div>
+            </div>
+
+            <!-- Aggregated Unique Orders (Menu Total Counts) -->
+            <div class="bg-white dark:bg-neutral-950 border border-zinc-200 dark:border-neutral-900 rounded-xl p-4 shadow-sm">
+                <h3 class="text-xs font-bold text-neutral-800 dark:text-white mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    ยอดรวมแยกตามเมนูสินค้า (แจ้งร้านค้า)
+                </h3>
+                <div class="divide-y divide-zinc-100 dark:divide-neutral-900 border-t border-b border-zinc-100 dark:border-neutral-900" id="aggregated-orders-list">
+                    <!-- Dynamic Summary of quantities -->
+                </div>
+            </div>
+
+            <!-- Detailed Response List (IMAGE image_a44a8c.png STYLE MODIFICATION - No Table headers, Compact Rows) -->
+            <div class="bg-white dark:bg-neutral-950 border border-zinc-200 dark:border-neutral-900 rounded-xl overflow-hidden shadow-sm">
+                <div class="px-4 py-3 border-b border-zinc-100 dark:border-neutral-900 flex justify-between items-center bg-zinc-50 dark:bg-neutral-900/10">
+                    <h3 class="text-xs font-bold text-neutral-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="database" class="w-4 h-4 text-neutral-400"></i>
+                        รายละเอียดผู้รับสิทธิ์และการตอบกลับ
+                    </h3>
+                    <div class="text-[10px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1" id="inline-modification-lock-text">
+                        <i data-lucide="lock" class="w-3 h-3 text-rose-500"></i> ปลดล็อกด้วยสิทธิ์แอดมินเพื่อแก้ไข
+                    </div>
+                </div>
+                
+                <!-- Compact minimal list based on image_a44a8c.png requirement (No table header columns) -->
+                <div class="divide-y divide-zinc-100 dark:divide-neutral-900" id="summary-compact-list-container">
+                    <!-- Custom Rendered rows: Name (Status) \n Menu -->
+                </div>
+            </div>
+        </section>
+
+        <!-- =================== TAB 3: ADMIN TAB (Gate Shielded) =================== -->
+        <section id="tab-admin-tab" class="space-y-6 hidden transition-all duration-300">
+            <!-- Password gate lock screen -->
+            <div id="admin-lock-screen" class="bg-white dark:bg-neutral-950 border border-zinc-200 dark:border-neutral-900 rounded-2xl p-6 md:p-8 text-center max-w-md mx-auto space-y-4 my-8 shadow-xl transition-all duration-300">
+                <div class="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 dark:text-rose-400 flex items-center justify-center mx-auto">
+                    <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                </div>
+                <div class="space-y-1">
+                    <h2 class="text-base font-bold text-neutral-900 dark:text-white">ลงชื่อเข้าใช้สิทธิ์ควบคุมแอดมิน</h2>
+                    <p class="text-xs text-neutral-500 dark:text-neutral-400">กรุณากรอกรหัสผ่านเพื่อสิทธิ์การแก้ไขและควบคุมระบบ</p>
+                </div>
+                <div class="space-y-2">
+                    <input type="password" id="admin-pass-input" class="w-full bg-zinc-50 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-xl px-3 py-2 text-center text-sm text-neutral-900 dark:text-white focus:outline-none focus:border-amber-500 font-mono tracking-widest" placeholder="••••••••" onkeydown="if(event.key==='Enter') verifyAdminPassword()">
+                    <button onclick="verifyAdminPassword()" class="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold rounded-xl text-xs transition-all shadow-md active-tap">
+                        ยืนยันรหัสผ่าน
+                    </button>
+                    <p class="text-[10px] text-neutral-400 dark:text-neutral-500">Hint สำหรับทดสอบ: 123456</p>
+                </div>
+            </div>
+
+            <!-- Admin actual panel views -->
+            <div id="admin-real-panels" class="hidden space-y-6">
+                <div class="border-b border-zinc-200 dark:border-neutral-900 pb-3 flex justify-between items-center">
+                    <div>
+                        <h1 class="text-lg font-bold tracking-tight text-neutral-950 dark:text-white">แผงควบคุมระบบ (Admin Panel)</h1>
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400">จัดการข้อมูลกิจกรรม รายชื่อกำลังพลหลัก และกลุ่มเมนูยอดฮิต</p>
+                    </div>
+                    <button onclick="logoutAdmin()" class="px-2.5 py-1 bg-zinc-100 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 hover:bg-zinc-200 dark:hover:bg-neutral-850 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 active-tap">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> ลงชื่อออก
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left side forms: event configurations -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-white dark:bg-neutral-950 border border-zinc-200 dark:border-neutral-900 rounded-xl p-5 space-y-4 shadow-sm">
+                            <h2 class="text-xs font-bold text-neutral-900 dark:text-white flex items-center gap-1.5 uppercase tracking-wider">
+                                <i data-lucide="edit" class="w-3.5 h-3.5 text-amber-500"></i>
+                                รายละเอียดกิจกรรมและข้อมูลระบบ (IMAGE image_a4439e.png MODIFIED)
+                            </h2>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold">ชื่อกิจกรรม / หัวข้อหลัก</label>
+                                    <input type="text" id="cfg-title" class="w-full bg-zinc-50 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-amber-500" placeholder="เช่น ผอ. เลี้ยงกาแฟบ่าย">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold">สถานที่ / ร้านอาหารปลายทาง</label>
+                                    <input type="text" id="cfg-location" class="w-full bg-zinc-50 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-amber-500" placeholder="เช่น Cafe Amazon">
+                                </div>
+                            </div>
+
+                            <!-- IMAGE image_a4439e.png REQUIREMENT ADDED: ประเภทกิจกรรม (Activity Type Choice) -->
+                            <div class="bg-zinc-50/50 dark:bg-neutral-900/20 p-3 rounded-lg border border-zinc-150 dark:border-neutral-900 space-y-2">
+                                <label class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold block">ประเภทกิจกรรม (ตัวเลือกการตอบรับสำหรับกำลังพล)</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button type="button" onclick="setActivityType('type1')" id="cfg-type1-btn" class="py-2 px-3 text-xs rounded-xl border text-center font-semibold transition-all active-tap">
+                                        1. รับ / ไม่รับ / ไม่แน่ใจ
+                                    </button>
+                                    <button type="button" onclick="setActivityType('type2')" id="cfg-type2-btn" class="py-2 px-3 text-xs rounded-xl border text-center font-semibold transition-all active-tap">
+                                        2. เข้าร่วม / ติดภารกิจ / ไม่แน่ใจ
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Date Formats modified: dd/mm/yy style picker helper display -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold">กำหนดวันที่เริ่มกิจกรรม</label>
+                                    <input type="date" id="cfg-date" class="w-full bg-zinc-50 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-amber-500">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold">กำหนดเวลานัดหมาย (24 ชม.)</label>
+                                    <input type="time" id="cfg-time" class="w-full bg-zinc-50 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-amber-500">
+                                </div>
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase font-bold">คำอธิบายรายละเอียด / หมายเหตุแอดมิน</label>
+                                <textarea id="cfg-note" rows="2" class="w-full bg-zinc-50 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-amber-500" placeholder="เช่น จำกัดเครื่องดื่มไม่เกินแก้วละ 70 บาท"></textarea>
+                            </div>
+
+                            <div class="flex justify-end pt-1">
+                                <button onclick="saveEventConfig()" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center gap-1 active-tap">
+                                    <i data-lucide="save" class="w-4 h-4"></i> อัปเดตข้อมูลกิจกรรม
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Manage Popular Menu Presets Dynamic Section -->
+                        <div class="bg-white dark:bg-neutral-950 border border-zinc-200 dark:border-neutral-900 rounded-xl p-5 space-y-4 shadow-sm">
+                            <h2 class="text-xs font-bold text-neutral-900 dark:text-white flex items-center gap-1.5 uppercase tracking-wider">
+                                <i data-lucide="tag" class="w-3.5 h-3.5 text-amber-500"></i>
+                                จัดการกลุ่มเมนูยอดฮิตด่วน
+                            </h2>
+                            <div class="flex gap-2">
+                                <input type="text" id="new-preset-input" class="flex-grow bg-zinc-50 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-lg px-3 py-1.5 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-amber-500" placeholder="เพิ่มรายการอาหารหรือเครื่องดื่มด่วน...">
+                                <button onclick="addNewPresetTag()" class="px-3 py-1.5 bg-zinc-100 dark:bg-neutral-800 hover:bg-zinc-200 dark:hover:bg-neutral-700 border border-zinc-200 dark:border-neutral-800 rounded-lg text-xs font-bold flex items-center gap-1 text-neutral-900 dark:text-white active-tap shrink-0">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มเมนู
+                                </button>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5 p-3 bg-zinc-50 dark:bg-neutral-900/20 rounded-lg border border-zinc-200 dark:border-neutral-900 min-h-[50px]" id="admin-preset-tags-list">
+                                <!-- Tags rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right side lists: participants manager and archiver -->
+                    <div class="space-y-6">
+                        <!-- Manage primary military participants -->
+                        <div class="bg-white dark:bg-neutral-950 border border-zinc-200 dark:border-neutral-900 rounded-xl p-5 space-y-4 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <h2 class="text-xs font-bold text-neutral-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                                    <i data-lucide="user-cog" class="w-3.5 h-3.5 text-amber-500"></i>
+                                    จัดการรายชื่อกำลังพลหลัก
+                                </h2>
+                                <span class="text-[10px] text-neutral-400 dark:text-neutral-500" id="admin-user-count">ทั้งหมด 0 คน</span>
+                            </div>
+
+                            <div class="flex gap-2 bg-zinc-50 dark:bg-neutral-900 p-1.5 rounded-lg border border-zinc-200 dark:border-neutral-850">
+                                <input type="text" id="new-p-name" class="flex-grow bg-transparent border-0 px-2.5 py-1 text-xs text-neutral-900 dark:text-white focus:outline-none" placeholder="ยศ ชื่อ-นามสกุล...">
+                                <button onclick="addParticipant()" class="px-3 py-1 bg-zinc-200 dark:bg-neutral-800 hover:bg-zinc-300 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-md text-[10px] font-bold uppercase shrink-0 transition-all active-tap">
+                                    เพิ่มชื่อ
+                                </button>
+                            </div>
+
+                            <div class="border border-zinc-100 dark:border-neutral-900 rounded-lg max-h-[200px] overflow-y-auto custom-scrollbar bg-zinc-50/50 dark:bg-neutral-900/10">
+                                <div id="admin-participants-list" class="divide-y divide-zinc-100 dark:divide-neutral-900">
+                                    <!-- Dynamic lists -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Archiver and cleaner -->
+                        <div class="bg-white dark:bg-neutral-950 border border-zinc-200 dark:border-neutral-900 rounded-xl p-5 space-y-4 shadow-sm flex flex-col justify-between">
+                            <div class="flex items-center justify-between border-b border-zinc-100 dark:border-neutral-900 pb-2">
+                                <h2 class="text-xs font-bold text-neutral-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                                    <i data-lucide="archive" class="w-3.5 h-3.5 text-neutral-400"></i>
+                                    จัดเก็บประวัติกิจกรรม
+                                </h2>
+                                <button onclick="triggerHistoryClearConfirmation()" class="text-[10px] text-rose-500 hover:text-rose-400 font-bold active-tap">ล้างข้อมูลประวัติ</button>
+                            </div>
+                            <p class="text-[11px] text-neutral-400 dark:text-neutral-500 leading-relaxed">
+                                เมื่อสรุปยอดเรียบร้อยแล้ว คุณสามารถทำการย้ายรายการเข้าสู่ประวัติกิจกรรมเพื่อล้างการตอบรับสำหรับรับยอดงานถัดไปได้ทันที
+                            </p>
+                            <button onclick="archiveCurrentEvent()" class="w-full py-2 bg-zinc-100 dark:bg-neutral-900 hover:bg-zinc-200 dark:hover:bg-neutral-850 text-neutral-800 dark:text-neutral-300 font-bold border border-zinc-250 dark:border-neutral-800 rounded-xl text-xs flex items-center justify-center gap-1 transition-all active-tap">
+                                <i data-lucide="archive-restore" class="w-4 h-4"></i> จัดเก็บกิจกรรมนี้และเริ่มรอบใหม่
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Form Response for Individual -->
+    <div id="order-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 dark:bg-black/85 backdrop-blur-sm hidden transition-all duration-300">
+        <div class="bg-white dark:bg-neutral-950 border border-zinc-200 dark:border-neutral-800 rounded-2xl w-full max-w-md p-5 relative shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-neutral-800 dark:text-neutral-200" id="order-modal-surface">
+            <!-- Close Button -->
+            <button onclick="closeOrderModal()" class="absolute right-3.5 top-3.5 text-neutral-400 hover:text-neutral-950 dark:hover:text-white p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-neutral-900 transition-all active-tap">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Modal Header -->
+            <div class="space-y-1.5 mb-5 pr-6">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-amber-500" id="modal-response-badge-title">บันทึกความจำนงและการตอบรับ</div>
+                <h3 id="modal-user-name" class="text-lg font-bold text-neutral-950 dark:text-white leading-tight">...</h3>
+                <p id="modal-event-context" class="text-[11px] text-neutral-500 dark:text-neutral-400">...</p>
+            </div>
+
+            <!-- Modal Forms -->
+            <div class="space-y-5">
+                <!-- Status Choice buttons dynamically rendered based on event type configuration -->
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">ประเภทความต้องการการเข้าร่วม</label>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button onclick="setModalStatus('join')" id="opt-status-join" class="py-2.5 px-1.5 rounded-lg border border-zinc-200 dark:border-neutral-800 bg-zinc-50 dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 text-center text-xs font-semibold flex flex-col items-center gap-1 transition-all active-tap">
+                            <i data-lucide="check-square" class="w-3.5 h-3.5 text-emerald-500 animate-pulse"></i>
+                            <span id="lbl-status-join">...</span>
+                        </button>
+                        <button onclick="setModalStatus('absent')" id="opt-status-absent" class="py-2.5 px-1.5 rounded-lg border border-zinc-200 dark:border-neutral-800 bg-zinc-50 dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 text-center text-xs font-semibold flex flex-col items-center gap-1 transition-all active-tap">
+                            <i data-lucide="x-square" class="w-3.5 h-3.5 text-rose-500"></i>
+                            <span id="lbl-status-absent">...</span>
+                        </button>
+                        <button onclick="setModalStatus('maybe')" id="opt-status-maybe" class="py-2.5 px-1.5 rounded-lg border border-zinc-200 dark:border-neutral-800 bg-zinc-50 dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 text-center text-xs font-semibold flex flex-col items-center gap-1 transition-all active-tap">
+                            <i data-lucide="help-circle" class="w-3.5 h-3.5 text-amber-500"></i>
+                            <span id="lbl-status-maybe">...</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Specific Item input context -->
+                <div id="order-inputs-container" class="space-y-3.5">
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">ระบุรายการอาหาร / เครื่องดื่ม</label>
+                        <input type="text" id="modal-order-input" class="w-full bg-zinc-50 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-amber-500" placeholder="ระบุเมนูที่ต้องการ เช่น อเมริกาโน่ร้อน หวานน้อย">
+                        <p class="text-[10px] text-neutral-400 dark:text-neutral-500">ใส่ระดับความหวาน ความเผ็ด หรือรายละเอียดอื่นๆ เพิ่มได้</p>
+                    </div>
+
+                    <!-- Preset popular food tags configured by admin -->
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider block">เลือกเมนูยอดฮิตด่วน:</label>
+                        <div class="flex flex-wrap gap-1" id="preset-dynamic-tags">
+                            <!-- Populates dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit / Cancel controllers -->
+                <div class="flex gap-2 pt-2 border-t border-zinc-100 dark:border-neutral-900">
+                    <button onclick="closeOrderModal()" class="flex-1 py-2 bg-zinc-100 dark:bg-neutral-900 hover:bg-zinc-200 dark:hover:bg-neutral-850 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white font-medium rounded-xl text-xs transition-all active-tap">
+                        ยกเลิก
+                    </button>
+                    <button onclick="submitUserOrder()" class="flex-1 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold rounded-xl text-xs transition-all shadow-md active-tap">
+                        ส่งคำตอบรับยอด
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal Confirm Dialog (Replaces unsafe window.confirm) -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm hidden transition-all duration-300">
+        <div class="bg-white dark:bg-neutral-950 border border-zinc-200 dark:border-neutral-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div class="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center mb-3">
+                <i data-lucide="help-circle" class="w-5 h-5"></i>
+            </div>
+            <h3 id="confirm-modal-title" class="text-sm font-bold text-neutral-950 dark:text-white mb-1">ยืนยันการดำเนินการ</h3>
+            <p id="confirm-modal-desc" class="text-xs text-neutral-500 dark:text-neutral-400 mb-4 leading-relaxed">กรุณายืนยันการสั่งการนี้อีกครั้งหนึ่งเพื่อความถูกต้อง</p>
+            <div class="flex gap-2">
+                <button id="confirm-modal-cancel" class="flex-1 py-2 bg-zinc-100 dark:bg-neutral-900 hover:bg-zinc-200 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white text-xs font-semibold rounded-xl transition-all active-tap">ยกเลิก</button>
+                <button id="confirm-modal-submit" class="flex-1 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-semibold rounded-xl transition-all shadow-md active-tap">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert / Toast Popup Message -->
+    <div id="toast-notif" class="fixed bottom-6 right-6 z-50 bg-white dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 text-neutral-900 dark:text-white px-4 py-3 rounded-xl flex items-center gap-3 shadow-2xl hidden max-w-sm transition-all duration-300 animate-in slide-in-from-bottom-5">
+        <div id="toast-icon" class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+            <i data-lucide="info" class="w-4 h-4"></i>
+        </div>
+        <div class="flex-grow">
+            <h4 id="toast-title" class="text-xs font-bold leading-none">แจ้งเตือน</h4>
+            <p id="toast-desc" class="text-[10px] text-neutral-500 dark:text-neutral-400 mt-1">รายละเอียด...</p>
+        </div>
+        <button onclick="dismissToast()" class="text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-colors">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="w-full border-t border-zinc-200 dark:border-neutral-900 bg-zinc-50 dark:bg-neutral-950/20 py-4 text-center text-[10px] text-neutral-400 dark:text-neutral-600 mt-8">
+        <p>© 2026 TSID Welfy App — Simple and Premium Flow.</p>
+    </footer>
+
+    <script>
+        // Core list of 17 default participants
+        const INITIAL_PARTICIPANTS = [
+            "พ.อ. มงคล  ข่มอาวุธ",
+            "พ.อ. สรเชษฐ  ดีเอื้อ",
+            "พ.อ. อาทร  หลาบเจริญ",
+            "พ.อ. ประสิทธิชัย  พิมพ์สอน",
+            "พ.อ. ไชยรัฐ  ช่างสีดา",
+            "ร.ท. เดชา  รัตนโสภา",
+            "ร.ต.หญิง ณัชชา  พุทธายะ",
+            "ร.ต. วิชิต  จำปานิล",
+            "จ.ส.อ. จีรยุทธ  รัตนวรพิทักษ์",
+            "จ.ส.อ. กีฬติ  บัวสุนทร",
+            "จ.ส.อ. สุชัย  บ่อคุ้ม",
+            "จ.ส.อ. สุประกิต  นรบัติ",
+            "จ.ส.อ. ศิริชัย  ประจวบสุข",
+            "จ.ส.อ.หญิง ปัญญภัทร  ปัญญาพร",
+            "จ.ส.ต. รณชัย  แน่นอุดร",
+            "ส.ต.หญิง อาริตา  อ่อนอินทร์",
+            "น.ส. สุกัญญา  ณ พูน"
+        ];
+
+        // Initial default tags customizable by admin
+        const DEFAULT_PRESET_TAGS = [
+            "อเมริกาโน่เย็น",
+            "อเมริกาโน่ร้อน",
+            "เอสเพรสโซ่เย็น",
+            "ลาเต้เย็น หวานน้อย",
+            "ชาไทยเย็น หวานปกติ",
+            "ชาเขียวเย็น",
+            "กะเพราหมูสับไข่ดาว",
+            "ผัดไทยกุ้งสด"
+        ];
+
+        // Persistent State Database (saved in localstorage)
+        let state = {
+            currentEvent: {
+                title: "ผอ. เลี้ยงเครื่องดื่มและกาแฟบ่ายเพื่อเพิ่มกำลังพล",
+                location: "Cafe Amazon",
+                date: "2026-06-18", // Will format to "18 มิ.ย. 69 (พ.ศ. 2569)"
+                time: "14:00",      // format: 24h as "14:00 น."
+                activityType: "type1", // type1: "รับ / ไม่รับ / ไม่แน่ใจ", type2: "เข้าร่วม / ติดภารกิจ / ไม่แน่ใจ"
+                note: "จำกัดท่านละ 1 รายการเครื่องดื่ม ยอดไม่เกิน 75 บาท ยินดีตอบรับข้อมูลทุกท่านครับ"
+            },
+            participants: [...INITIAL_PARTICIPANTS],
+            responses: {}, // { name: { status, order } }
+            history: [
+                {
+                    id: 1,
+                    title: "ผอ. เลี้ยงก๋วยเตี๋ยวกลางเดือน",
+                    location: "ก๋วยเตี๋ยวเนื้อนายสุ",
+                    date: "2026-06-02",
+                    time: "12:00",
+                    summary: "มีผู้ตอบรับเข้าร่วม 15 ท่าน สั่งก๋วยเตี๋ยวเนื้อเสร็จสิ้นด้วยดี",
+                    // Archive the actual responses at that moment
+                    responses: {
+                        "พ.อ. มงคล  ข่มอาวุธ": { status: "join", order: "เส้นหมี่น้ำชิ้นสดเปื่อย" },
+                        "พ.อ. สรเชษฐ  ดีเอื้อ": { status: "join", order: "เกาเหลาเนื้อทุกอย่าง + ข้าวเปล่า" },
+                        "พ.อ. อาทร  หลาบเจริญ": { status: "join", order: "เส้นใหญ่แห้งเนื้อสด" },
+                        "ร.ต.หญิง ณัชชา  พุทธายะ": { status: "absent", order: "" },
+                        "น.ส. สุกัญญา  ณ พูน": { status: "maybe", order: "เกาเหลาเนื้อสด" }
+                    }
+                }
+            ],
+            presetTags: [...DEFAULT_PRESET_TAGS],
+            theme: 'dark' // Default theme is dark
+        };
+
+        // Local state variables
+        let isAuthorized = false; // Verified admin status
+        let activeTab = "user-tab";
+        let selectedParticipantName = "";
+        let selectedModalStatus = "join";
+        let activeEventExpanded = false; // Controls if active participant list is shown on home tab
+        let expandedHistoryId = null;    // ID of the currently expanded history item
+
+        // Loader
+        function loadState() {
+            const saved = localStorage.getItem("orderly_coordinator_state_v3");
+            if (saved) {
+                try {
+                    state = JSON.parse(saved);
+                    if (!state.presetTags) state.presetTags = [...DEFAULT_PRESET_TAGS];
+                    if (!state.theme) state.theme = 'dark';
+                    if (!state.currentEvent.activityType) state.currentEvent.activityType = 'type1';
+                } catch (e) {
+                    console.error("State parse failed", e);
+                }
+            } else {
+                resetResponses();
+            }
+            applyTheme(state.theme);
+        }
+
+        function saveStateToStorage() {
+            localStorage.setItem("orderly_coordinator_state_v3", JSON.stringify(state));
+        }
+
+        function resetResponses() {
+            state.responses = {};
+            state.participants.forEach(name => {
+                state.responses[name] = {
+                    status: "pending",
+                    order: ""
+                };
+            });
+            saveStateToStorage();
+        }
+
+        // Custom Confirm Modal runner to bypass rule
+        function askConfirmation(title, desc, onSubmit) {
+            const modal = document.getElementById("confirm-modal");
+            document.getElementById("confirm-modal-title").textContent = title;
+            document.getElementById("confirm-modal-desc").textContent = desc;
+            
+            modal.classList.remove("hidden");
+            
+            const btnCancel = document.getElementById("confirm-modal-cancel");
+            const btnSubmit = document.getElementById("confirm-modal-submit");
+            
+            const cleanup = () => {
+                modal.classList.add("hidden");
+                btnSubmit.onclick = null;
+                btnCancel.onclick = null;
+            };
+
+            btnCancel.onclick = cleanup;
+            btnSubmit.onclick = () => {
+                onSubmit();
+                cleanup();
+            };
+        }
+
+        // Formats "2026-06-18" into "18 มิ.ย. 69 (พ.ศ. 2569)"
+        function formatThaiDate(dateString) {
+            if (!dateString) return "ไม่ได้กำหนดวันที่";
+            try {
+                const parts = dateString.split("-");
+                if (parts.length !== 3) return dateString;
+                
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10);
+                const day = parseInt(parts[2], 10);
+
+                const thMonthsShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+                const beYear = year + 543;
+                const shortYear = beYear % 100;
+                const monthText = thMonthsShort[month - 1] || "";
+
+                return `${day} ${monthText} ${shortYear} (พ.ศ. ${beYear})`;
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        // Formats time strictly as 24-hours e.g. "14:00 น."
+        function formatThaiTime(timeString) {
+            if (!timeString) return "ไม่ได้ระบุเวลา";
+            return `${timeString} น.`;
+        }
+
+        // Returns dynamic statuses according to Activity Type selection (Type 1 or Type 2)
+        function getStatusText(statusKey, forceType = null) {
+            const type = forceType || state.currentEvent.activityType || "type1";
+            if (type === "type1") {
+                if (statusKey === "join") return "รับ";
+                if (statusKey === "absent") return "ไม่รับ";
+                if (statusKey === "maybe") return "ไม่แน่ใจ";
+            } else {
+                if (statusKey === "join") return "เข้าร่วม";
+                if (statusKey === "absent") return "ติดภารกิจ";
+                if (statusKey === "maybe") return "ไม่แน่ใจ";
+            }
+            return "รอยืนยันยอด";
+        }
+
+        // Theme controllers (Cleanly toggles HTML class avoiding dark mode bugs)
+        function toggleTheme() {
+            state.theme = state.theme === 'dark' ? 'light' : 'dark';
+            saveStateToStorage();
+            applyTheme(state.theme);
+        }
+
+        function applyTheme(theme) {
+            const html = document.documentElement;
+            if (theme === 'dark') {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
+            render();
+        }
+
+        // Admin Security Gates
+        function verifyAdminPassword() {
+            const passInput = document.getElementById("admin-pass-input");
+            if (passInput.value === "123456") {
+                isAuthorized = true;
+                passInput.value = "";
+                showToast("ยืนยันตัวตนแอดมินสำเร็จ", "สิทธิ์การควบคุมระบบพร้อมใช้งานแล้ว", "success");
+                updateAuthUI();
+                render();
+            } else {
+                showToast("รหัสผ่านไม่ถูกต้อง", "กรุณาลองป้อนอีกครั้ง (Hint: 123456)", "error");
+            }
+        }
+
+        function toggleAdminAuthDirect() {
+            if (isAuthorized) {
+                isAuthorized = false;
+                showToast("ออกจากระบบแล้ว", "ยกเลิกสิทธิ์การแก้ไขระบบเรียบร้อย", "info");
+                updateAuthUI();
+                render();
+                switchTab('user-tab');
+            } else {
+                switchTab('admin-tab');
+            }
+        }
+
+        function logoutAdmin() {
+            isAuthorized = false;
+            updateAuthUI();
+            render();
+            switchTab('user-tab');
+        }
+
+        function updateAuthUI() {
+            const lockIcon = document.getElementById("auth-lock-icon");
+            const authText = document.getElementById("auth-status-text");
+            const lockIndicatorText = document.getElementById("inline-modification-lock-text");
+
+            if (isAuthorized) {
+                lockIcon.setAttribute("data-lucide", "unlock");
+                lockIcon.className = "w-3.5 h-3.5 text-emerald-500 animate-bounce";
+                authText.textContent = "แอดมินออนไลน์";
+                if (lockIndicatorText) {
+                    lockIndicatorText.innerHTML = `<span class="text-emerald-500 font-semibold flex items-center gap-1"><i data-lucide="unlock" class="w-3 h-3"></i> สิทธิ์แก้ไขปลดล็อกแล้ว</span>`;
+                }
+            } else {
+                lockIcon.setAttribute("data-lucide", "lock");
+                lockIcon.className = "w-3.5 h-3.5 text-rose-500";
+                authText.textContent = "สิทธิ์แอดมิน";
+                if (lockIndicatorText) {
+                    lockIndicatorText.innerHTML = `<span class="text-rose-500 flex items-center gap-1"><i data-lucide="lock" class="w-3 h-3"></i> ปลดล็อกด้วยสิทธิ์แอดมินเพื่อแก้ไข</span>`;
+                }
+            }
+            lucide.createIcons();
+        }
+
+        // Tab switcher
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.querySelectorAll("main > section").forEach(section => section.classList.add("hidden"));
+            document.getElementById(`tab-${tabId}`).classList.remove("hidden");
+
+            if (tabId === 'admin-tab') {
+                const lockScreen = document.getElementById("admin-lock-screen");
+                const realPanels = document.getElementById("admin-real-panels");
+                if (isAuthorized) {
+                    lockScreen.classList.add("hidden");
+                    realPanels.classList.remove("hidden");
+                } else {
+                    lockScreen.classList.remove("hidden");
+                    realPanels.classList.add("hidden");
+                }
+            }
+
+            // Tab button styles update
+            const btns = {
+                "user-tab": document.getElementById("nav-user"),
+                "summary-tab": document.getElementById("nav-summary"),
+                "admin-tab": document.getElementById("nav-admin")
+            };
+
+            Object.keys(btns).forEach(key => {
+                if (key === tabId) {
+                    btns[key].className =
+        "flex-1 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 " +
+        "flex items-center justify-center gap-1 " +
+        "bg-white dark:bg-white " +
+        "text-black dark:text-black " +
+        "shadow-sm border border-zinc-200 dark:border-neutral-700";
+                } else {
+                    btns[key].className = "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 flex items-center justify-center gap-1 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white";
+                }
+            });
+
+            render();
+        }
+
+        // Toast Messages
+        let toastTimeout;
+        function showToast(title, desc, type = "success") {
+            const toast = document.getElementById("toast-notif");
+            const iconDiv = document.getElementById("toast-icon");
+            const tTitle = document.getElementById("toast-title");
+            const tDesc = document.getElementById("toast-desc");
+
+            tTitle.textContent = title;
+            tDesc.textContent = desc;
+
+            if (type === "success") {
+                iconDiv.className = "w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0";
+                iconDiv.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i>`;
+            } else if (type === "error") {
+                iconDiv.className = "w-8 h-8 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0";
+                iconDiv.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4"></i>`;
+            } else {
+                iconDiv.className = "w-8 h-8 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0";
+                iconDiv.innerHTML = `<i data-lucide="info" class="w-4 h-4"></i>`;
+            }
+
+            lucide.createIcons();
+            toast.classList.remove("hidden");
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                dismissToast();
+            }, 4500);
+        }
+
+        function dismissToast() {
+            document.getElementById("toast-notif").classList.add("hidden");
+        }
+
+        // Toggle expansion of current event participant grid
+        function toggleActiveEventExpansion() {
+            activeEventExpanded = !activeEventExpanded;
+            render();
+        }
+
+        // Toggle expansion of a specific history item
+        function toggleHistoryItem(id) {
+            if (expandedHistoryId === id) {
+                expandedHistoryId = null;
+            } else {
+                expandedHistoryId = id;
+            }
+            render();
+        }
+
+        // Render Active event values
+        function renderActiveEventBanner() {
+            const evt = state.currentEvent;
+            document.getElementById("evt-title").textContent = evt.title || "ไม่ได้ระบุกิจกรรม";
+            
+            // Apply formatting values
+            document.getElementById("evt-date").textContent = formatThaiDate(evt.date);
+            document.getElementById("evt-time").textContent = formatThaiTime(evt.time);
+            document.getElementById("evt-location").textContent = evt.location || "ไม่ได้ระบุร้านค้า";
+            document.getElementById("evt-note").innerHTML = evt.note ? `<strong>หมายเหตุ:</strong> ${evt.note}` : "ไม่มีคำชี้แจงเพิ่มเติม";
+
+            // Title headers for KPIs depending on status selection
+            document.getElementById("kpi-join-title").textContent = `${getStatusText('join')} / ร่วม`;
+            document.getElementById("kpi-absent-title").textContent = `${getStatusText('absent')} / ไม่ร่วม`;
+
+            const total = state.participants.length;
+            const replied = state.participants.filter(name => state.responses[name] && state.responses[name].status !== 'pending').length;
+            
+            document.getElementById("stat-replied-count").textContent = replied;
+            document.getElementById("stat-total-count").textContent = total;
+
+            const percent = total > 0 ? (replied / total) * 100 : 0;
+            document.getElementById("stat-progress-bar").style.width = `${percent}%`;
+
+            // Accordion classes and states for Active Event
+            const chevron = document.getElementById("active-event-chevron");
+            const pListContainer = document.getElementById("participant-list-container");
+            const statusTip = document.getElementById("expand-status-tip");
+
+            if (activeEventExpanded) {
+                chevron.style.transform = "rotate(180deg)";
+                pListContainer.classList.remove("hidden");
+                statusTip.textContent = "แตะกิจกรรมนี้เพื่อ ซ่อนรายชื่อกำลังพล";
+            } else {
+                chevron.style.transform = "rotate(0deg)";
+                pListContainer.classList.add("hidden");
+                statusTip.textContent = "แตะกิจกรรมนี้เพื่อ เปิดแสดงรายชื่อและสั่งเมนู";
+            }
+        }
+
+        // Render Participant cards on home/user tab
+        function renderParticipantCards() {
+            const grid = document.getElementById("participant-action-grid");
+            grid.innerHTML = "";
+
+            if (state.participants.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-10 text-neutral-500 text-xs italic">
+                        ไม่มีข้อมูลรายชื่อกำลังพลหลัก กรุณาเพิ่มรายชื่อในแผงควบคุมระบบ
+                    </div>
+                `;
+                return;
+            }
+
+            state.participants.forEach(name => {
+                const response = state.responses[name] || { status: 'pending', order: '' };
+                
+                let dotColor = "bg-zinc-400 dark:bg-neutral-600";
+                let badgeStyle = "text-zinc-500 border-zinc-200 bg-zinc-100 dark:text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900/10";
+                
+                if (response.status === 'join') {
+                    dotColor = "bg-emerald-500";
+                    badgeStyle = "text-emerald-600 border-emerald-100 bg-emerald-50 dark:text-emerald-400 dark:border-emerald-950 dark:bg-emerald-950/20";
+                } else if (response.status === 'absent') {
+                    dotColor = "bg-rose-500";
+                    badgeStyle = "text-rose-600 border-rose-100 bg-rose-50 dark:text-rose-400 dark:border-rose-950 dark:bg-rose-950/20";
+                } else if (response.status === 'maybe') {
+                    dotColor = "bg-amber-500";
+                    badgeStyle = "text-amber-600 border-amber-100 bg-amber-50 dark:text-amber-400 dark:border-amber-950 dark:bg-amber-950/20";
+                }
+
+                const item = document.createElement("div");
+                item.className = "p-3 rounded-xl border border-zinc-200 dark:border-neutral-900 bg-white dark:bg-neutral-950 flex items-center justify-between gap-2.5 transition-all cursor-pointer hover:border-zinc-300 dark:hover:border-neutral-800 active-tap shadow-sm";
+                item.onclick = () => openOrderModal(name);
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-2.5 overflow-hidden flex-1">
+                        <span class="w-2.5 h-2.5 rounded-full ${dotColor} shrink-0 shadow-sm animate-pulse"></span>
+                        <div class="truncate">
+                            <h4 class="text-xs font-bold text-neutral-900 dark:text-white">${name}</h4>
+                            <p class="text-[10px] text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                                ${response.order ? response.order : getStatusText(response.status)}
+                            </p>
+                        </div>
+                    </div>
+                    <span class="text-[9px] px-2 py-0.5 rounded-full border ${badgeStyle} shrink-0 text-center font-bold">
+                        ${response.status === 'pending' ? 'ระบุยอด' : getStatusText(response.status)}
+                    </span>
+                `;
+
+                grid.appendChild(item);
+            });
+        }
+
+        // Render Home page history section
+        function renderHomeHistory() {
+            const container = document.getElementById("homepage-history-container");
+            container.innerHTML = "";
+
+            if (state.history.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-4 text-center text-xs text-neutral-500 italic">
+                        ไม่มีข้อมูลประวัติกิจกรรมที่ผ่านมา
+                    </div>
+                `;
+                return;
+            }
+
+            [...state.history].reverse().forEach(hist => {
+                const isExpanded = expandedHistoryId === hist.id;
+                const item = document.createElement("div");
+                item.className = "p-3 rounded-xl border border-zinc-250 dark:border-neutral-900 bg-zinc-100/40 dark:bg-neutral-950/40 space-y-2 text-xs cursor-pointer hover:border-amber-500/50 dark:hover:border-amber-500/40 transition-all";
+                item.onclick = () => toggleHistoryItem(hist.id);
+
+                let respondentsListHTML = "";
+                if (isExpanded && hist.responses) {
+                    respondentsListHTML = `<div class="mt-2.5 pt-2 border-t border-zinc-200 dark:border-neutral-900 space-y-1 bg-white/50 dark:bg-neutral-950/50 p-2 rounded-lg max-h-[160px] overflow-y-auto custom-scrollbar">`;
+                    
+                    const respondentNames = Object.keys(hist.responses);
+                    if (respondentNames.length === 0) {
+                        respondentsListHTML += `<p class="text-[9px] text-neutral-400 italic">ไม่มีบันทึกข้อมูลรายชื่อกำลังพลเก่า</p>`;
+                    } else {
+                        respondentNames.forEach(rName => {
+                            const resp = hist.responses[rName];
+                            let statusText = "รอยืนยัน";
+                            let colorClass = "text-neutral-500";
+                            
+                            if (resp.status === 'join') {
+                                statusText = "รับ/เข้าร่วม";
+                                colorClass = "text-emerald-500 font-bold";
+                            } else if (resp.status === 'absent') {
+                                statusText = "ไม่รับ/ติดภารกิจ";
+                                colorClass = "text-rose-500";
+                            } else if (resp.status === 'maybe') {
+                                statusText = "ไม่แน่ใจ";
+                                colorClass = "text-amber-500";
+                            }
+
+                            respondentsListHTML += `
+                                <div class="flex justify-between items-start py-1 border-b border-zinc-100 dark:border-neutral-900/40 last:border-0 text-[10px]">
+                                    <span class="font-medium text-neutral-800 dark:text-neutral-200 truncate pr-2">${rName}</span>
+                                    <div class="text-right shrink-0">
+                                        <span class="${colorClass}">${statusText}</span>
+                                        ${resp.order ? `<span class="text-neutral-500 dark:text-neutral-400 block text-[9px]">${resp.order}</span>` : ""}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                    respondentsListHTML += `</div>`;
+                }
+
+                item.innerHTML = `
+                    <div class="flex justify-between items-start gap-2 border-b border-zinc-200 dark:border-neutral-900 pb-1.5">
+                        <h4 class="font-bold text-neutral-900 dark:text-white truncate">${hist.title}</h4>
+                        <span class="text-[9px] text-amber-600 dark:text-amber-500 shrink-0 font-medium">${formatThaiDate(hist.date)}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-neutral-500 dark:text-neutral-400 mt-1">
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="map-pin" class="w-3 h-3 text-neutral-400"></i>
+                            ${hist.location || "ไม่ระบุ"}
+                        </span>
+                        <span class="text-neutral-500 dark:text-neutral-500 font-semibold">${formatThaiTime(hist.time)}</span>
+                    </div>
+                    <p class="text-[10px] text-neutral-400 dark:text-neutral-500 italic pt-1 leading-relaxed">${hist.summary}</p>
+                    <div class="flex items-center justify-between pt-1.5 border-t border-zinc-100 dark:border-neutral-900/60 text-[9px] text-neutral-500">
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="info" class="w-3 h-3 text-neutral-400"></i>
+                            ${isExpanded ? "คลิกเพื่อย่อปิดรายชื่อประวัติ" : "คลิกเพื่อขยายดูประวัติการสั่งรายคน"}
+                        </span>
+                        <i data-lucide="${isExpanded ? "chevron-up" : "chevron-down"}" class="w-3.5 h-3.5"></i>
+                    </div>
+                    ${respondentsListHTML}
+                `;
+                container.appendChild(item);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Render Summary with requirements from image_a44a8c.png
+        function renderSummaryTab() {
+            let joinCount = 0;
+            let absentCount = 0;
+            let maybeCount = 0;
+            let pendingCount = 0;
+
+            const orderAggregation = {};
+            const compactListContainer = document.getElementById("summary-compact-list-container");
+            compactListContainer.innerHTML = "";
+
+            state.participants.forEach(name => {
+                const response = state.responses[name] || { status: 'pending', order: '' };
+
+                // Analytics mapping
+                if (response.status === 'join') {
+                    joinCount++;
+                    if (response.order && response.order.trim() !== "") {
+                        const normOrder = response.order.trim();
+                        orderAggregation[normOrder] = (orderAggregation[normOrder] || 0) + 1;
+                    }
+                } else if (response.status === 'absent') {
+                    absentCount++;
+                } else if (response.status === 'maybe') {
+                    maybeCount++;
+                    if (response.order && response.order.trim() !== "") {
+                        const normOrder = response.order.trim();
+                        orderAggregation[normOrder] = (orderAggregation[normOrder] || 0) + 1;
+                    }
+                } else {
+                    pendingCount++;
+                }
+
+                // Render dynamic status labels with correct Thai type mappings
+                let statusLabel = "";
+                let statusColorText = "text-neutral-400";
+                
+                if (response.status === 'join') {
+                    statusLabel = getStatusText('join');
+                    statusColorText = "text-emerald-600 dark:text-emerald-400 font-bold";
+                } else if (response.status === 'absent') {
+                    statusLabel = getStatusText('absent');
+                    statusColorText = "text-rose-600 dark:text-rose-400 font-bold";
+                } else if (response.status === 'maybe') {
+                    statusLabel = getStatusText('maybe');
+                    statusColorText = "text-amber-600 dark:text-amber-500 font-bold";
+                } else {
+                    statusLabel = "รอยืนยัน";
+                    statusColorText = "text-neutral-400 italic";
+                }
+
+                // IMAGE image_a44a8c.png COMPACT ROW DESIGN (No Headers, "Name (Status)" on top, "Menu" on bottom)
+                const row = document.createElement("div");
+                row.className = "px-4 py-3 hover:bg-zinc-50 dark:hover:bg-neutral-900/10 flex items-center justify-between transition-all";
+
+                const actionControlsHTML = isAuthorized ? `
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button onclick="openOrderModal('${name}')" class="p-1.5 hover:bg-amber-500/10 text-neutral-500 dark:text-neutral-400 hover:text-amber-600 dark:hover:text-amber-500 rounded-lg transition-all" title="แก้ไข">
+                            <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="clearIndividualResponse('${name}')" class="p-1.5 hover:bg-rose-500/10 text-neutral-500 dark:text-neutral-400 hover:text-rose-600 dark:hover:text-rose-500 rounded-lg transition-all" title="ล้างค่า">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                ` : `
+                    <div class="flex items-center shrink-0">
+                        <button onclick="promptAccessLockToast()" class="p-1.5 text-neutral-300 dark:text-neutral-800 hover:text-rose-500 transition-all" title="สิทธิ์การแก้ไขถูกล็อก">
+                            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+
+                row.innerHTML = `
+                    <div class="space-y-1 overflow-hidden pr-2 flex-grow">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <span class="text-xs font-bold text-neutral-900 dark:text-white">${name}</span>
+                            <span class="text-[10px] ${statusColorText}">(${statusLabel})</span>
+                        </div>
+                        <div class="text-[11px] font-medium text-neutral-600 dark:text-neutral-400 truncate">
+                            ${response.order ? response.order : '<span class="text-neutral-350 dark:text-neutral-700 italic font-normal">ไม่มีรายการ</span>'}
+                        </div>
+                    </div>
+                    ${actionControlsHTML}
+                `;
+
+                compactListContainer.appendChild(row);
+            });
+
+            // Update top counts
+            document.getElementById("sum-count-join").textContent = `${joinCount} คน`;
+            document.getElementById("sum-count-absent").textContent = `${absentCount} คน`;
+            document.getElementById("sum-count-maybe").textContent = `${maybeCount} คน`;
+            document.getElementById("sum-count-pending").textContent = `${pendingCount} คน`;
+
+            // Render aggregated counts for kitchen/restaurant
+            const aggContainer = document.getElementById("aggregated-orders-list");
+            aggContainer.innerHTML = "";
+
+            const aggKeys = Object.keys(orderAggregation);
+            if (aggKeys.length === 0) {
+                aggContainer.innerHTML = `
+                    <div class="py-4 text-center text-xs text-neutral-400 italic">ไม่มีข้อมูลการสั่งเมนูในระบบขณะนี้</div>
+                `;
+            } else {
+                aggKeys.forEach(menu => {
+                    const count = orderAggregation[menu];
+                    const div = document.createElement("div");
+                    div.className = "flex items-center justify-between py-2.5 text-xs border-b border-zinc-100 dark:border-neutral-900/60 last:border-0";
+                    div.innerHTML = `
+                        <span class="font-medium text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                            ${menu}
+                        </span>
+                        <span class="px-2.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold rounded text-[10px]">
+                            x ${count} รายการ
+                        </span>
+                    `;
+                    aggContainer.appendChild(div);
+                });
+            }
+
+            lucide.createIcons();
+            updateAuthUI();
+        }
+
+        function promptAccessLockToast() {
+            showToast("สิทธิ์แอดมินถูกปิดกั้น", "กรุณาใส่รหัสผ่านแอดมินที่แท็บควบคุมระบบก่อนทำการแก้ไขข้อมูลนี้", "error");
+        }
+
+        // Render Admin controls
+        function renderAdminTab() {
+            if (!isAuthorized) return;
+
+            if (document.activeElement !== document.getElementById("cfg-title")) {
+                document.getElementById("cfg-title").value = state.currentEvent.title || "";
+            }
+            if (document.activeElement !== document.getElementById("cfg-location")) {
+                document.getElementById("cfg-location").value = state.currentEvent.location || "";
+            }
+            if (document.activeElement !== document.getElementById("cfg-date")) {
+                document.getElementById("cfg-date").value = state.currentEvent.date || "";
+            }
+            if (document.activeElement !== document.getElementById("cfg-time")) {
+                document.getElementById("cfg-time").value = state.currentEvent.time || "";
+            }
+            if (document.activeElement !== document.getElementById("cfg-note")) {
+                document.getElementById("cfg-note").value = state.currentEvent.note || "";
+            }
+
+            // Visualise active Activity Type choice (Type 1 or Type 2)
+            const type1Btn = document.getElementById("cfg-type1-btn");
+            const type2Btn = document.getElementById("cfg-type2-btn");
+            const type = state.currentEvent.activityType || "type1";
+
+            if (type === "type1") {
+                type1Btn.className = "py-2 px-3 text-xs rounded-xl border border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-center font-bold shadow-sm transition-all";
+                type2Btn.className = "py-2 px-3 text-xs rounded-xl border border-zinc-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 text-center font-medium hover:border-zinc-300 dark:hover:border-neutral-700 transition-all";
+            } else {
+                type1Btn.className = "py-2 px-3 text-xs rounded-xl border border-zinc-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 text-center font-medium hover:border-zinc-300 dark:hover:border-neutral-700 transition-all";
+                type2Btn.className = "py-2 px-3 text-xs rounded-xl border border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-center font-bold shadow-sm transition-all";
+            }
+
+            document.getElementById("admin-user-count").textContent = `ทั้งหมด ${state.participants.length} คน`;
+
+            // Active military participant row lists
+            const pContainer = document.getElementById("admin-participants-list");
+            pContainer.innerHTML = "";
+
+            state.participants.forEach(name => {
+                const div = document.createElement("div");
+                div.className = "flex items-center justify-between px-3.5 py-2 hover:bg-zinc-50 dark:hover:bg-neutral-900/30 transition-all text-xs";
+                div.innerHTML = `
+                    <span class="text-neutral-700 dark:text-neutral-300 font-medium">${name}</span>
+                    <button onclick="deleteParticipant('${name}')" class="p-1 hover:bg-rose-500/10 text-neutral-400 dark:text-neutral-500 hover:text-rose-600 dark:hover:text-rose-400 rounded transition-all active-tap" title="ลบรายชื่อ">
+                        <i data-lucide="user-minus" class="w-3.5 h-3.5"></i>
+                    </button>
+                `;
+                pContainer.appendChild(div);
+            });
+
+            // Active dynamic preset tag lists
+            const presetContainer = document.getElementById("admin-preset-tags-list");
+            presetContainer.innerHTML = "";
+
+            state.presetTags.forEach((tag, idx) => {
+                const span = document.createElement("span");
+                span.className = "inline-flex items-center gap-1.5 px-2.5 py-1 bg-zinc-100 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 hover:border-zinc-300 dark:hover:border-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs transition-all";
+                span.innerHTML = `
+                    <span>${tag}</span>
+                    <button onclick="removePresetTag(${idx})" class="text-neutral-400 dark:text-neutral-500 hover:text-rose-500 transition-all active-tap">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                `;
+                presetContainer.appendChild(span);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Global master render trigger
+        function render() {
+            renderActiveEventBanner();
+            if (activeTab === "user-tab") {
+                renderParticipantCards();
+                renderHomeHistory();
+            } else if (activeTab === "summary-tab") {
+                renderSummaryTab();
+            } else if (activeTab === "admin-tab") {
+                renderAdminTab();
+            }
+        }
+
+        // ================= ACTION HANDLERS =================
+
+        // Triggered inside admin panel: changes current event response style types
+        function setActivityType(typeKey) {
+            state.currentEvent.activityType = typeKey;
+            saveStateToStorage();
+            renderAdminTab();
+            showToast("ปรับเปลี่ยนประเภทกิจกรรมสำเร็จ", `ระบบจะสลับตัวเลือกการตอบรับเป็นรูปแบบที่ ${typeKey === 'type1' ? '1' : '2'}`, "info");
+        }
+
+        function addNewPresetTag() {
+            const input = document.getElementById("new-preset-input");
+            const val = input.value.trim();
+
+            if (!val) {
+                showToast("ข้อผิดพลาด", "กรุณาระบุชื่ออาหารหรือเครื่องดื่มก่อนทำการบันทึก", "error");
+                return;
+            }
+
+            state.presetTags.push(val);
+            saveStateToStorage();
+            input.value = "";
+            renderAdminTab();
+            showToast("เพิ่มเมนูยอดฮิตแล้ว", `เพิ่มรายการ ${val} เข้ากลุ่มด่วนเรียบร้อย`, "success");
+        }
+
+        function removePresetTag(idx) {
+            const tag = state.presetTags[idx];
+            state.presetTags.splice(idx, 1);
+            saveStateToStorage();
+            renderAdminTab();
+            showToast("ลบเมนูแล้ว", `ลบ ${tag} ออกจากกลุ่มเมนูยอดฮิตเรียบร้อย`, "info");
+        }
+
+        // Open custom order response popup modal for a participant
+        function openOrderModal(pName) {
+            selectedParticipantName = pName;
+            const response = state.responses[pName] || { status: 'pending', order: '' };
+            selectedModalStatus = response.status === 'pending' ? 'join' : response.status;
+
+            document.getElementById("modal-user-name").textContent = pName;
+            document.getElementById("modal-event-context").textContent = `ความจำนงของกิจกรรม: ${state.currentEvent.title} ณ ${state.currentEvent.location}`;
+            document.getElementById("modal-order-input").value = response.order || "";
+
+            // Dynamic setup for status button labels based on type configuration
+            document.getElementById("lbl-status-join").textContent = getStatusText('join');
+            document.getElementById("lbl-status-absent").textContent = getStatusText('absent');
+            document.getElementById("lbl-status-maybe").textContent = getStatusText('maybe');
+
+            // Populate popular presets
+            const tagsDiv = document.getElementById("preset-dynamic-tags");
+            tagsDiv.innerHTML = "";
+
+            if (state.presetTags.length === 0) {
+                tagsDiv.innerHTML = `<span class="text-[10px] text-neutral-400 dark:text-neutral-500 italic">ไม่มีข้อมูลกลุ่มเมนูยอดฮิต</span>`;
+            } else {
+                state.presetTags.forEach(tag => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "px-2 py-1 text-[10px] bg-zinc-100 dark:bg-neutral-900 border border-zinc-200 dark:border-neutral-800 hover:bg-zinc-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded transition-all active-tap";
+                    btn.textContent = tag;
+                    btn.onclick = () => {
+                        document.getElementById("modal-order-input").value = tag;
+                    };
+                    tagsDiv.appendChild(btn);
+                });
+            }
+
+            setModalStatus(selectedModalStatus);
+            document.getElementById("order-modal").classList.remove("hidden");
+        }
+
+        function closeOrderModal() {
+            document.getElementById("order-modal").classList.add("hidden");
+        }
+
+        // Visual toggle styles for status select modal buttons
+        function setModalStatus(status) {
+            selectedModalStatus = status;
+
+            const btnJoin = document.getElementById("opt-status-join");
+            const btnAbsent = document.getElementById("opt-status-absent");
+            const btnMaybe = document.getElementById("opt-status-maybe");
+            const inputGroupContainer = document.getElementById("order-inputs-container");
+
+            [btnJoin, btnAbsent, btnMaybe].forEach(btn => {
+                btn.className = "py-2.5 px-1.5 rounded-lg border border-zinc-200 dark:border-neutral-800 bg-zinc-50 dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 text-center text-xs font-semibold flex flex-col items-center gap-1 transition-all active-tap";
+            });
+
+            if (status === 'join') {
+                btnJoin.className = "py-2.5 px-1.5 rounded-lg border border-emerald-500 dark:border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-center text-xs font-bold flex flex-col items-center gap-1 transition-all shadow-md";
+                inputGroupContainer.style.display = "block";
+            } else if (status === 'absent') {
+                btnAbsent.className = "py-2.5 px-1.5 rounded-lg border border-rose-500 dark:border-rose-500 bg-rose-500/15 text-rose-600 dark:text-rose-400 text-center text-xs font-bold flex flex-col items-center gap-1 transition-all shadow-md";
+                inputGroupContainer.style.display = "none";
+            } else if (status === 'maybe') {
+                btnMaybe.className = "py-2.5 px-1.5 rounded-lg border border-amber-500 dark:border-amber-500 bg-amber-500/15 text-amber-600 dark:text-amber-400 text-center text-xs font-bold flex flex-col items-center gap-1 transition-all shadow-md";
+                inputGroupContainer.style.display = "block";
+            }
+        }
+
+        // Submits individual order response
+        function submitUserOrder() {
+            if (!selectedParticipantName) return;
+
+            const orderValue = document.getElementById("modal-order-input").value.trim();
+
+            if ((selectedModalStatus === 'join' || selectedModalStatus === 'maybe') && orderValue === "") {
+                showToast("ต้องการข้อมูลเมนู", "กรุณาระบุรายการเครื่องดื่มหรืออาหารของท่าน หรือเลือกจากกลุ่มเมนูด้านล่าง", "error");
+                return;
+            }
+
+            state.responses[selectedParticipantName] = {
+                status: selectedModalStatus,
+                order: (selectedModalStatus === 'absent') ? "" : orderValue
+            };
+
+            saveStateToStorage();
+            closeOrderModal();
+            render();
+            showToast("ลงข้อมูลเรียบร้อย", `บันทึกรายการสำหรับ ${selectedParticipantName} สำเร็จ`, "success");
+        }
+
+        function clearIndividualResponse(pName) {
+            if (!isAuthorized) {
+                promptAccessLockToast();
+                return;
+            }
+            state.responses[pName] = { status: 'pending', order: '' };
+            saveStateToStorage();
+            render();
+            showToast("รีเซ็ตสถานะแล้ว", `ล้างข้อมูลและการตัดสินใจของ ${pName} สำเร็จ`, "info");
+        }
+
+        // Reset all response statuses (custom confirmation)
+        function resetAllOrdersWithAuth() {
+            if (!isAuthorized) {
+                promptAccessLockToast();
+                return;
+            }
+            askConfirmation(
+                "ต้องการรีเซ็ตยอดทั้งหมดใช่หรือไม่?", 
+                "การตอบกลับ ยอดสั่ง และตัวเลือกของกำลังพลทุกคนจะคืนค่ากลับเป็น 'รอยืนยันยอด' ข้อมูลเดิมจะหายไป", 
+                () => {
+                    resetResponses();
+                    render();
+                    showToast("รีเซ็ตยอดสำเร็จ", "ข้อมูลการตอบกลับคืนค่าเป็นรอยืนยันเรียบร้อยแล้ว", "success");
+                }
+            );
+        }
+
+        // Save admin configs
+        function saveEventConfig() {
+            if (!isAuthorized) return;
+
+            const title = document.getElementById("cfg-title").value.trim();
+            const location = document.getElementById("cfg-location").value.trim();
+            const date = document.getElementById("cfg-date").value;
+            const time = document.getElementById("cfg-time").value;
+            const note = document.getElementById("cfg-note").value.trim();
+
+            if (!title) {
+                showToast("ข้อมูลไม่ครบถ้วน", "กรุณาระบุชื่อกิจกรรมหรือหัวข้อหลักของท่าน", "error");
+                return;
+            }
+
+            state.currentEvent.title = title;
+            state.currentEvent.location = location;
+            state.currentEvent.date = date;
+            state.currentEvent.time = time;
+            state.currentEvent.note = note;
+
+            saveStateToStorage();
+            render();
+            showToast("อัปเดตกิจกรรมแล้ว", "บันทึกและปรับโครงสร้างรายละเอียดเรียบร้อย", "success");
+        }
+
+        function addParticipant() {
+            if (!isAuthorized) return;
+
+            const nameInput = document.getElementById("new-p-name");
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                showToast("ใส่ข้อมูลไม่ถูกต้อง", "กรุณาระบุ ยศ ชื่อ-นามสกุล ของบุคคลที่ท่านต้องการเพิ่ม", "error");
+                return;
+            }
+
+            if (state.participants.includes(name)) {
+                showToast("รายชื่อซ้ำ", "บุคคลนี้มีรายชื่ออยู่แล้วในระบบ", "error");
+                return;
+            }
+
+            state.participants.push(name);
+            state.responses[name] = { status: 'pending', order: '' };
+
+            saveStateToStorage();
+            nameInput.value = "";
+            render();
+            showToast("เพิ่มสำเร็จ", `เพิ่ม ${name} เข้ากำลังพลหลักเรียบร้อย`, "success");
+        }
+
+        function deleteParticipant(name) {
+            if (!isAuthorized) return;
+
+            askConfirmation(
+                "ต้องการลบกำลังพลหลักใช่หรือไม่?",
+                `รายชื่อและบันทึกของ ${name} จะถูกนำออกจากระบบควบคุมถาวร`,
+                () => {
+                    state.participants = state.participants.filter(p => p !== name);
+                    delete state.responses[name];
+                    saveStateToStorage();
+                    render();
+                    showToast("ลบข้อมูลสำเร็จ", "ทำการลบข้อมูลกำลังพลออกจากโครงสร้างเรียบร้อย", "info");
+                }
+            );
+        }
+
+        // Archive with full detailed responses copy
+        function archiveCurrentEvent() {
+            if (!isAuthorized) return;
+
+            const evt = state.currentEvent;
+            const total = state.participants.length;
+            const joined = state.participants.filter(name => state.responses[name] && state.responses[name].status === 'join').length;
+
+            const summaryText = `กิจกรรมลุล่วง มีผู้ร่วม ${joined} จากทั้งหมด ${total} คน ยอดสั่งรวมรายการเสร็จเรียบร้อย`;
+
+            // Deep-copy responses to store in history!
+            const responsesBackup = JSON.parse(JSON.stringify(state.responses));
+
+            const historyItem = {
+                id: Date.now(),
+                title: evt.title,
+                location: evt.location,
+                date: evt.date || new Date().toISOString().split('T')[0],
+                time: evt.time,
+                summary: summaryText,
+                responses: responsesBackup // detailed backup of participants response at archive time
+            };
+
+            state.history.push(historyItem);
+            resetResponses();
+            saveStateToStorage();
+            render();
+            showToast("จัดเก็บเข้าประวัติแล้ว", "ย้ายกิจกรรมไปยังแฟ้มประวัติ และเตรียมสิทธิ์สำหรับการรับยอดรอบใหม่", "success");
+        }
+
+        function triggerHistoryClearConfirmation() {
+            if (!isAuthorized) return;
+
+            askConfirmation(
+                "ลบข้อมูลประวัติทั้งหมดหรือไม่?",
+                "ข้อมูลประวัติของกิจกรรมทั้งหมดที่ผ่านมาจะถูกลบออกถาวร ไม่สามารถย้อนคืนได้",
+                () => {
+                    state.history = [];
+                    saveStateToStorage();
+                    render();
+                    showToast("ล้างข้อมูลสำเร็จ", "แฟ้มประวัติกิจกรรมทั้งหมดถูกลบเรียบร้อย", "info");
+                }
+            );
+        }
+
+        // Copy aggregated summaries formatted elegantly for LINE orders
+        function copySummaryToClipboard() {
+            const evt = state.currentEvent;
+            let displayDate = formatThaiDate(evt.date);
+            let displayTime = formatThaiTime(evt.time);
+
+            let text = `📋 **สรุปยอดสั่งสินค้า: ${evt.title}**\n📍 ร้าน/สถานที่: ${evt.location || "ไม่ระบุ"}\n📅 วันที่: ${displayDate}\n🕒 เวลา: ${displayTime}\n`;
+            text += `------------------------------------------\n`;
+
+            const orderAggregation = {};
+            const joinedList = [];
+            const absentList = [];
+            const maybeList = [];
+            const pendingList = [];
+
+            state.participants.forEach(name => {
+                const response = state.responses[name] || { status: 'pending', order: '' };
+                if (response.status === 'join') {
+                    joinedList.push(name);
+                    if (response.order && response.order.trim() !== "") {
+                        const norm = response.order.trim();
+                        orderAggregation[norm] = (orderAggregation[norm] || 0) + 1;
+                    }
+                } else if (response.status === 'absent') {
+                    absentList.push(name);
+                } else if (response.status === 'maybe') {
+                    maybeList.push(name);
+                    if (response.order && response.order.trim() !== "") {
+                        const norm = response.order.trim();
+                        orderAggregation[norm] = (orderAggregation[norm] || 0) + 1;
+                    }
+                } else {
+                    pendingList.push(name);
+                }
+            });
+
+            text += `🍔 **สรุปรายการยอดรวมสั่ง (แจ้งร้านค้า):**\n`;
+            const aggKeys = Object.keys(orderAggregation);
+            if (aggKeys.length === 0) {
+                text += `   (ยังไม่มีความจำนงระบุยอดอาหาร)\n`;
+            } else {
+                aggKeys.forEach(menu => {
+                    text += `   - ${menu}: จำนวน ${orderAggregation[menu]} รายการ\n`;
+                });
+            }
+
+            text += `\n🧑‍🤝‍🧑 **รายละเอียดรายชื่อบุคคล:**\n`;
+            text += `✅ ${getStatusText('join')} (${joinedList.length} ท่าน):\n`;
+            joinedList.forEach(name => {
+                const ord = state.responses[name].order ? ` [สั่ง: ${state.responses[name].order}]` : "";
+                text += `   - ${name}${ord}\n`;
+            });
+
+            if (maybeList.length > 0) {
+                text += `⚠️ ${getStatusText('maybe')} (${maybeList.length} ท่าน):\n`;
+                maybeList.forEach(name => {
+                    const ord = state.responses[name].order ? ` [สั่ง: ${state.responses[name].order}]` : "";
+                    text += `   - ${name}${ord}\n`;
+                });
+            }
+
+            if (absentList.length > 0) {
+                text += `❌ ${getStatusText('absent')} (${absentList.length} ท่าน):\n`;
+                absentList.forEach(name => {
+                    text += `   - ${name}\n`;
+                });
+            }
+
+            if (pendingList.length > 0) {
+                text += `⏳ รอยืนยันยอด (${pendingList.length} ท่าน):\n`;
+                pendingList.forEach(name => {
+                    text += `   - ${name}\n`;
+                });
+            }
+
+            text += `------------------------------------------\n`;
+            text += `สรุปด่วนอัตโนมัติจาก Orderly Coordinator App`;
+
+            const tempTextarea = document.createElement("textarea");
+            tempTextarea.value = text;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast("คัดลอกสรุปสำเร็จ", "คัดลอกสถิติและรายการทั้งหมดเรียบร้อยแล้ว วางใน LINE ได้ทันที", "success");
+                } else {
+                    throw new Error("Copy failure");
+                }
+            } catch (err) {
+                showToast("คัดลอกไม่สำเร็จ", "กรุณาลองเลือกครอบคลุมข้อมูลและคัดลอกด้วยตนเอง", "error");
+            }
+
+            document.body.removeChild(tempTextarea);
+        }
+
+        // Window load setups
+        window.addEventListener("DOMContentLoaded", () => {
+            loadState();
+            updateAuthUI();
+            lucide.createIcons();
+            render();
+        });
+    </script>
+</body>
+</html>
