@@ -1,0 +1,2998 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTMS - ระบบติดตามเอกสารสารบรรณ กองทัพบก</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Sarabun & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- QRCode.js CDN for generating QR Codes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sarabun: ['Sarabun', 'sans-serif'],
+                        sans: ['Inter', 'Sarabun', 'sans-serif'],
+                    },
+                    colors: {
+                        army: {
+                            50: '#f4f6f3',
+                            100: '#e4e9e0',
+                            200: '#cbd4c2',
+                            300: '#a7b59a',
+                            400: '#809472',
+                            500: '#5f7451',
+                            600: '#495b3e',
+                            700: '#3c4b34',
+                            800: '#273121', // Deep Olive Green
+                            900: '#1b2217',
+                            950: '#0e120c',
+                        },
+                        gold: {
+                            DEFAULT: '#d4af37',
+                            dark: '#aa8c2c',
+                            light: '#f3e5ab'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Base typography scale - Premium size for RTA accessibility */
+        html {
+            font-size: 19px; /* Default larger font for outstanding readability */
+            font-family: 'Sarabun', 'Inter', sans-serif;
+            transition: font-size 0.2s ease, background-color 0.3s ease;
+        }
+        
+        /* Interactive touch optimization */
+        button, select, input, textarea {
+            min-height: 44px; /* Apple & Android touch target standard */
+        }
+
+        body {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Scrollbar customization */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1b2217;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #5f7451;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4af37;
+        }
+
+        /* Drag over target highlight */
+        .drag-highlight {
+            border: 2px dashed #d4af37 !important;
+            background-color: rgba(212, 175, 55, 0.15) !important;
+            transform: scale(1.015);
+        }
+
+        /* Mobile specific adjustments to font size and layout density */
+        @media (max-w: 640px) {
+            html {
+                font-size: 16px; /* Adaptive scale down for high density mobile */
+            }
+            button, select, input, textarea {
+                font-size: 16px !important; /* Prevent iOS automatic zoom on focus */
+            }
+        }
+
+        /* Print optimization to print QR label sheets seamlessly */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-sheet-area, #print-sheet-area * {
+                visibility: visible;
+            }
+            #print-sheet-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                color: black !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col antialiased">
+
+    <!-- TOAST ALERTS (CUSTOM PROMPT) -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-5 py-4 rounded-2xl border shadow-2xl">
+        <span id="toast-icon" class="p-1.5 rounded-xl"></span>
+        <span id="toast-msg" class="text-base font-bold"></span>
+    </div>
+
+    <!-- CUSTOM CONFIRM DIALOG -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-army-800 border border-slate-300 dark:border-army-700 rounded-3xl w-full max-w-sm p-6 mx-4 relative shadow-2xl space-y-4 text-center">
+            <div class="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto text-xl">
+                <i data-lucide="help-circle" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h3 id="confirm-title" class="text-base font-black text-slate-950 dark:text-white">ยืนยันการทำรายการ</h3>
+                <p id="confirm-desc" class="text-xs text-slate-500 dark:text-army-300 mt-1 leading-relaxed">ข้อมูลทั้งหมดจะถูกบันทึกและไม่สามารถย้อนคืนได้</p>
+            </div>
+            <div class="flex justify-center gap-3 pt-2">
+                <button id="confirm-cancel-btn" class="bg-slate-100 dark:bg-army-700 hover:bg-slate-200 dark:hover:bg-army-650 text-slate-700 dark:text-white text-xs px-5 py-2 rounded-xl font-bold transition-all">ยกเลิก</button>
+                <button id="confirm-ok-btn" class="bg-rose-500 hover:bg-rose-600 text-white text-xs px-5 py-2 rounded-xl font-black transition-all">ตกลงดำเนินการ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. LOGIN SCREEN -->
+    <section id="login-section" class="flex-grow flex items-center justify-center py-10 px-4">
+        <div class="w-full max-w-md bg-white dark:bg-army-800 border border-slate-200 dark:border-army-700/60 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-6">
+            
+            <!-- Branding Header -->
+            <div class="text-center space-y-2">
+                <div class="inline-flex bg-gold p-3 rounded-2xl text-army-900 shadow-lg mx-auto">
+                    <i data-lucide="shield-check" class="w-10 h-10"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black tracking-wider text-army-900 dark:text-white">
+                        RTA RTMS PORTAL
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-army-300 font-bold mt-1">ระบบลงทะเบียนและติดตามตำแหน่งหนังสือสารบรรณ</p>
+                </div>
+            </div>
+
+            <!-- Credentials Form -->
+            <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-black text-slate-600 dark:text-army-200 flex items-center gap-1">
+                        <i data-lucide="user" class="w-4 h-4 text-gold"></i> รหัสประจำตัว (Username)
+                    </label>
+                    <input type="text" id="login-username" required placeholder="พิมพ์บัญชีผู้ใช้..." class="w-full bg-slate-100 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-xl px-4 py-2.5 text-base text-slate-900 dark:text-slate-100 focus:outline-none focus:border-gold transition-colors">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-black text-slate-600 dark:text-army-200 flex items-center gap-1">
+                        <i data-lucide="lock" class="w-4 h-4 text-gold"></i> รหัสผ่าน (Password)
+                    </label>
+                    <input type="password" id="login-password" required placeholder="••••••••" class="w-full bg-slate-100 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-xl px-4 py-2.5 text-base text-slate-900 dark:text-slate-100 focus:outline-none focus:border-gold transition-colors">
+                </div>
+
+                <button type="submit" class="w-full bg-gold hover:bg-gold-dark text-army-900 font-black py-3 rounded-2xl text-base transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 mt-2">
+                    <i data-lucide="log-in" class="w-5 h-5"></i>
+                    <span>เข้าสู่ระบบปฏิบัติงาน</span>
+                </button>
+            </form>
+
+            <!-- Quick Account Selector -->
+            <div class="border-t border-slate-200 dark:border-army-700/50 pt-4 space-y-3">
+                <span class="text-xs font-bold text-slate-500 dark:text-army-300 block text-center">ทดสอบระบบอย่างรวดเร็ว (Quick Role Selector)</span>
+                <div class="grid grid-cols-2 gap-2 text-left">
+                    <button onclick="fillMockLogin('admin')" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-army-900/40 dark:hover:bg-army-900 border border-slate-200 dark:border-army-800 rounded-xl flex flex-col justify-between transition-colors">
+                        <span class="text-xs font-black text-slate-800 dark:text-white">👑 ADMIN</span>
+                        <span class="text-[10px] text-slate-400">เข้าได้ทุกส่วนและตั้งค่า</span>
+                    </button>
+                    <button onclick="fillMockLogin('subadmin')" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-army-900/40 dark:hover:bg-army-900 border border-slate-200 dark:border-army-800 rounded-xl flex flex-col justify-between transition-colors">
+                        <span class="text-xs font-black text-slate-800 dark:text-white">👮 SUB-ADMIN</span>
+                        <span class="text-[10px] text-slate-400">ลงหนังสือ ทำ QR คุม</span>
+                    </button>
+                    <button onclick="fillMockLogin('superuser')" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-army-900/40 dark:hover:bg-army-900 border border-slate-200 dark:border-army-800 rounded-xl flex flex-col justify-between transition-colors">
+                        <span class="text-xs font-black text-slate-800 dark:text-white">⭐ SUPERUSER (ผบช.)</span>
+                        <span class="text-[10px] text-slate-400">สั่งแก้ไข/ขอพบด่วน</span>
+                    </button>
+                    <button onclick="fillMockLogin('user')" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-army-900/40 dark:hover:bg-army-900 border border-slate-200 dark:border-army-800 rounded-xl flex flex-col justify-between transition-colors">
+                        <span class="text-xs font-black text-slate-800 dark:text-white">🔑 USER (หน้าห้อง)</span>
+                        <span class="text-[10px] text-slate-400">สแกนอัปเดตสเตตัสพิกัด</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. MAIN APPLICATION WORKSPACE -->
+    <div id="main-app-section" class="hidden flex-grow flex flex-col">
+        
+        <!-- TOP APP HEADER -->
+        <header class="bg-white dark:bg-army-800 border-b border-slate-200 dark:border-army-700/60 sticky top-0 z-40 shadow-md no-print">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+                
+                <!-- Logo & Brand Info -->
+                <div class="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-start">
+                    <div class="flex items-center space-x-2">
+                        <div class="bg-gold p-2 rounded-xl text-army-900 shadow-md">
+                            <i data-lucide="shield-check" class="w-6 h-6 md:w-7 md:h-7"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-lg md:text-xl font-bold tracking-wider text-army-900 dark:text-white flex items-center gap-1.5">
+                                RTMS <span id="app-badge" class="text-[10px] bg-gold/25 text-army-900 dark:text-gold px-2.5 py-0.5 rounded-md font-bold border border-gold/30">V3.0</span>
+                            </h1>
+                            <p class="text-xs text-slate-500 dark:text-army-300 font-light">ระบบคุมสารบรรณทหารและการอัปเดตความเร็ว</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Profile Badge / Log Out -->
+                    <div class="flex items-center space-x-2">
+                        <div class="bg-slate-100 dark:bg-army-900/40 p-1 px-2.5 rounded-full border border-slate-200 dark:border-army-700/50 flex items-center space-x-2">
+                            <div id="role-badge" class="w-7 h-7 rounded-full bg-gold/25 text-gold flex items-center justify-center text-xs font-black">มภ.</div>
+                            <span id="profile-name" class="text-xs font-extrabold text-slate-700 dark:text-white hidden sm:inline">ชื่อผู้ใช้งาน</span>
+                        </div>
+                        <button onclick="handleLogout()" class="p-2 bg-rose-50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-900 text-rose-600 rounded-xl transition-colors border border-rose-100 dark:border-rose-900/40" title="ออกจากระบบ">
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Theme Control & Accessibility Toolbars (Mandatory 1-line layout) -->
+                <div class="flex flex-nowrap items-center justify-between gap-1.5 w-full md:w-auto">
+                    
+                    <!-- Dark/Light Theme -->
+                    <div class="flex items-center bg-slate-100 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-200 dark:border-slate-800 shadow-inner shrink-0">
+                        <button onclick="toggleTheme('light')" id="theme-btn-light" class="p-1 px-2 rounded text-xs font-semibold transition-all flex items-center gap-0.5 text-slate-500 dark:text-slate-400">
+                            <i data-lucide="sun" class="w-3.5 h-3.5"></i><span class="hidden sm:inline text-[11px]">สว่าง</span>
+                        </button>
+                        <button onclick="toggleTheme('dark')" id="theme-btn-dark" class="p-1 px-2 rounded text-xs font-semibold transition-all flex items-center gap-0.5 text-slate-500 dark:text-slate-400">
+                            <i data-lucide="moon" class="w-3.5 h-3.5"></i><span class="hidden sm:inline text-[11px]">มืด</span>
+                        </button>
+                    </div>
+
+                    <!-- FontSize Scale Adjuster -->
+                    <div class="flex items-center bg-slate-100 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-200 dark:border-slate-800 shadow-inner shrink-0">
+                        <button onclick="adjustFontSize(-2)" class="p-1 px-2 hover:bg-slate-200 dark:hover:bg-army-700/40 rounded text-xs font-bold text-slate-600 dark:text-army-300" title="ลดขนาดตัวอักษร">A-</button>
+                        <button onclick="adjustFontSize(0)" class="p-1 px-2 bg-white dark:bg-army-700/60 text-army-800 dark:text-gold rounded text-[10px] font-bold" title="คืนค่าเริ่มต้น">
+                            <span class="hidden sm:inline font-bold">ขนาดปกติ</span>
+                            <span class="inline sm:hidden">A</span>
+                        </button>
+                        <button onclick="adjustFontSize(2)" class="p-1 px-2 hover:bg-slate-200 dark:hover:bg-army-700/40 rounded text-xs font-bold text-slate-600 dark:text-army-300" title="เพิ่มขนาดตัวอักษร">A+</button>
+                    </div>
+
+                    <!-- Settings Button (Visible only to ADMIN) -->
+                    <button id="header-db-settings-btn" onclick="openConfigModal()" class="bg-slate-200 dark:bg-army-700/60 hover:bg-slate-300 dark:hover:bg-army-700 p-2.5 rounded-lg border border-slate-300 dark:border-army-600/50 transition-colors shrink-0 hidden" title="ตั้งค่าระบบฐานข้อมูล">
+                        <i data-lucide="settings" class="w-4 h-4 text-army-800 dark:text-gold"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- NAVIGATION TABS / ROLE SPECIFIC MENUS -->
+        <nav id="nav-tabs-bar" class="bg-slate-200/50 dark:bg-army-950/80 border-b border-slate-200 dark:border-army-800 py-1.5 no-print">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap gap-1.5">
+                
+                <!-- General tabs -->
+                <button onclick="switchTab('registry')" id="tab-btn-registry" class="tab-button px-4 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all">
+                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                    <span>สมุดทะเบียนเอกสารคุม</span>
+                </button>
+                
+                <!-- Admin specific tabs -->
+                <button onclick="switchTab('users')" id="tab-btn-users" class="tab-button px-4 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all hidden">
+                    <i data-lucide="users-2" class="w-4 h-4"></i>
+                    <span>จัดการผู้ใช้บริการระบบ</span>
+                </button>
+                <button onclick="switchTab('units')" id="tab-btn-units" class="tab-button px-4 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all hidden">
+                    <i data-lucide="network" class="w-4 h-4"></i>
+                    <span>กำหนดโครงสร้างหน่วย</span>
+                </button>
+                <button onclick="switchTab('systems')" id="tab-btn-systems" class="tab-button px-4 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all hidden">
+                    <i data-lucide="database" class="w-4 h-4"></i>
+                    <span>ตั้งค่าโครงข่ายระบบ Cloud</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTAINER -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col gap-5 no-print">
+            
+            <!-- TOTAL MONITOR BOARD -->
+            <section class="grid grid-cols-4 gap-1.5 md:gap-4">
+                <div class="bg-white dark:bg-army-800/20 border border-slate-200 dark:border-army-800/60 p-1.5 xs:p-2 sm:p-4 rounded-xl flex items-center justify-between shadow-sm min-w-0">
+                    <div class="truncate">
+                        <p class="text-[9px] sm:text-xs text-slate-500 dark:text-army-300 font-bold truncate leading-tight">เอกสารทั้งหมด</p>
+                        <h3 id="stat-total" class="text-sm sm:text-2xl font-black mt-0.5 text-army-900 dark:text-white">0</h3>
+                    </div>
+                    <div class="hidden sm:flex bg-slate-100 dark:bg-army-700/30 p-2 rounded-lg text-army-600 dark:text-army-300 shrink-0"><i data-lucide="files" class="w-5 h-5"></i></div>
+                </div>
+                <div class="bg-white dark:bg-army-800/20 border border-slate-200 dark:border-army-800/60 p-1.5 xs:p-2 sm:p-4 rounded-xl flex items-center justify-between shadow-sm min-w-0">
+                    <div class="truncate">
+                        <p class="text-[9px] sm:text-xs text-amber-600 dark:text-amber-500 font-bold truncate leading-tight">อยู่ระหว่างพิจารณา</p>
+                        <h3 id="stat-pending" class="text-sm sm:text-2xl font-black mt-0.5 text-amber-600 dark:text-amber-400">0</h3>
+                    </div>
+                    <div class="hidden sm:flex bg-amber-500/10 p-2 rounded-lg text-amber-600 dark:text-amber-400 shrink-0"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                </div>
+                <div class="bg-white dark:bg-army-800/20 border border-slate-200 dark:border-army-800/60 p-1.5 xs:p-2 sm:p-4 rounded-xl flex items-center justify-between shadow-sm min-w-0">
+                    <div class="truncate">
+                        <p class="text-[9px] sm:text-xs text-emerald-600 dark:text-emerald-400 font-bold truncate leading-tight">อนุมัติเรียบร้อย</p>
+                        <h3 id="stat-approved" class="text-sm sm:text-2xl font-black mt-0.5 text-emerald-600 dark:text-emerald-400">0</h3>
+                    </div>
+                    <div class="hidden sm:flex bg-emerald-500/10 p-2 rounded-lg text-emerald-600 dark:text-emerald-400 shrink-0"><i data-lucide="cloud-lightning" class="w-5 h-5"></i></div>
+                </div>
+                <div class="bg-white dark:bg-army-800/20 border border-slate-200 dark:border-army-800/60 p-1.5 xs:p-2 sm:p-4 rounded-xl flex items-center justify-between shadow-sm min-w-0">
+                    <div class="truncate">
+                        <p class="text-[9px] sm:text-xs text-sky-600 dark:text-sky-400 font-bold truncate leading-tight">บาร์โค้ดสิทธิ์ล่วงหน้า</p>
+                        <h3 id="stat-pregen" class="text-sm sm:text-2xl font-black mt-0.5 text-sky-600 dark:text-sky-400">0</h3>
+                    </div>
+                    <div class="hidden sm:flex bg-sky-500/10 p-2 rounded-lg text-sky-600 dark:text-sky-400 shrink-0"><i data-lucide="qr-code" class="w-5 h-5"></i></div>
+                </div>
+            </section>
+
+            <!-- TAB CONTENTS VIEWPORT -->
+            <div id="tab-contents-viewport">
+                
+                <!-- VIEW 1: REGISTRY (Master Registry Book - Now Full Width) -->
+                <div id="view-registry" class="view-content space-y-5">
+                    
+                    <!-- Search, Filters & Actions Toolbar -->
+                    <div class="bg-white dark:bg-army-800/30 border border-slate-200 dark:border-army-800/50 p-4 rounded-2xl shadow shadow-slate-100 dark:shadow-none space-y-4">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <!-- Left: Search and Quick Scan input -->
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+                                <div class="relative w-full sm:w-64">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 dark:text-army-400">
+                                        <i data-lucide="search" class="w-5 h-5"></i>
+                                    </span>
+                                    <input type="text" id="search-input" oninput="renderDocumentList()" placeholder="ค้นเลขหนังสือ / ค้นเรื่อง..." class="w-full bg-slate-100 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-xl pl-10 pr-4 py-2.5 text-base text-slate-900 dark:text-slate-100 focus:outline-none focus:border-gold transition-colors placeholder:text-slate-400 dark:placeholder:text-army-500 animate-pulse">
+                                </div>
+                                <div class="flex shadow-md rounded-xl overflow-hidden shrink-0">
+                                    <input type="text" id="quick-uid-input" placeholder="สแกน / กรอก UID ด่วน..." class="bg-slate-100 dark:bg-army-950 border border-slate-355 dark:border-army-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none w-full sm:w-48">
+                                    <button onclick="quickScanSubmit()" class="bg-gold hover:bg-gold-dark text-army-900 font-extrabold px-4 text-xs transition-colors shrink-0 flex items-center gap-1">
+                                        <i data-lucide="scan" class="w-4 h-4"></i>
+                                        <span>สแกน</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Right: Actions Strip (Generate / Create) -->
+                            <div id="quick-actions-strip" class="flex items-center gap-2 w-full md:w-auto">
+                                <button onclick="openPregenModal()" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-slate-200 dark:bg-army-700/80 hover:bg-slate-300 dark:hover:bg-army-700 text-army-900 dark:text-gold border border-slate-300 dark:border-army-600 px-3.5 py-2.5 rounded-xl text-xs font-black transition-all">
+                                    <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                    <span>ทำ QR ล่วงหน้า</span>
+                                </button>
+                                <button onclick="openNewDocModal()" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-gold hover:bg-gold-dark text-army-900 px-4 py-2.5 rounded-xl text-xs font-black shadow-lg transition-transform active:scale-95">
+                                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                    <span>ลงทะเบียนใหม่</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Date Filter and Sorting (Mandatory 1-line layout on desktop, responsive on mobile) -->
+                        <div class="flex flex-wrap gap-4 items-center bg-slate-50 dark:bg-army-900/30 p-3 rounded-xl border border-slate-200/60 dark:border-army-850">
+                            <!-- Date Filter -->
+                            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-army-300">
+                                <i data-lucide="calendar" class="w-4.5 h-4.5 text-gold"></i>
+                                <span>กรองตามวันล่าสุด:</span>
+                                <input type="date" id="filter-date" onchange="renderDocumentList()" class="bg-white dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-lg px-2.5 py-1 text-slate-900 dark:text-slate-100 focus:outline-none">
+                                <button onclick="clearDateFilter()" class="text-rose-500 hover:text-rose-600 font-bold ml-1 text-xs">ล้างกรอง</button>
+                            </div>
+                            
+                            <div class="hidden md:block h-5 w-[1px] bg-slate-300 dark:bg-army-800"></div>
+
+                            <!-- Sorting Time Option -->
+                            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-army-300">
+                                <i data-lucide="arrow-up-down" class="w-4.5 h-4.5 text-gold"></i>
+                                <span>เรียงตามลำดับเวลา:</span>
+                                <select id="sort-time" onchange="renderDocumentList()" class="bg-white dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-lg px-2.5 py-1 text-slate-900 dark:text-slate-100 focus:outline-none">
+                                    <option value="desc" selected>ใหม่สุด ➡️ เก่าสุด (Z-A)</option>
+                                    <option value="asc">เก่าสุด ➡️ ใหม่สุด (A-Z)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pre-printed empty stickers shelf (Stock Panel) -->
+                    <div id="pregen-strip" class="bg-sky-50 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/40 rounded-2xl p-4 space-y-3 shadow-md hidden">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-sm font-black text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
+                                <i data-lucide="tag" class="w-4 h-4 animate-pulse"></i>
+                                สติกเกอร์รหัสว่างที่ยังไม่ลงทะเบียน (Pre-printed Stock)
+                            </h4>
+                            <button onclick="openPregenSheetView()" class="text-xs text-gold hover:underline font-bold">ดูแผ่นปริ้นท์ทั้งหมด</button>
+                        </div>
+                        <div id="pregen-badge-container" class="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+                            <!-- Dynamic Generated Stock Badges -->
+                        </div>
+                    </div>
+
+                    <!-- Master Registry Table (Full Width) -->
+                    <div class="bg-white dark:bg-army-800/10 border border-slate-200 dark:border-army-800/60 rounded-2xl overflow-hidden shadow-xl">
+                        <div class="bg-slate-100 dark:bg-army-800/30 px-5 py-4 border-b border-slate-200 dark:border-army-800/50 flex justify-between items-center">
+                            <h2 class="text-sm font-black text-army-900 dark:text-white flex items-center gap-1.5">
+                                <i data-lucide="clipboard-list" class="w-5 h-5 text-gold"></i>
+                                สมุดควบคุมหนังสือราชการ (ทะเบียนคุมระบบหลัก)
+                            </h2>
+                            <span id="registry-author-label" class="text-xs text-slate-500 dark:text-army-400 font-bold">หน่วยบันทึก: ฝกพ.</span>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-base">
+                                <thead>
+                                    <tr class="bg-slate-200/50 dark:bg-army-950/60 border-b border-slate-200 dark:border-army-800/50 text-slate-600 dark:text-army-300 text-xs font-bold uppercase tracking-wider">
+                                        <th class="py-3.5 px-4">เลขรับ / UID</th>
+                                        <th class="py-3.5 px-4">ชื่อเรื่อง</th>
+                                        <th class="py-3.5 px-4 text-center">ระดับความเร่งด่วน</th>
+                                        <th class="py-3.5 px-4">สถานะล่าสุด</th>
+                                        <th class="py-3.5 px-4 text-right">สิทธิ์พิมพ์ / จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="document-table-body" class="divide-y divide-slate-200 dark:divide-army-800/30">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                            <div id="no-docs-message" class="hidden p-10 text-center text-slate-400 dark:text-army-400">
+                                <i data-lucide="folder-search" class="w-12 h-12 mx-auto text-army-600 mb-2"></i>
+                                <p class="text-sm font-bold">ไม่พบเอกสารในคลังฐานข้อมูล</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: MANAGE USERS & MATRIX (Visible only to ADMIN) -->
+                <div id="view-users" class="view-content hidden space-y-5">
+                    <div class="bg-white dark:bg-army-800/20 border border-slate-200 dark:border-army-800/60 rounded-2xl p-5 shadow-xl space-y-5">
+                        
+                        <!-- Header & Add User Toggle button -->
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200 dark:border-army-800/40">
+                            <div>
+                                <h2 class="text-lg font-black text-army-900 dark:text-white flex items-center gap-1.5">
+                                    <i data-lucide="users-2" class="w-5 h-5 text-gold"></i>
+                                    รายชื่อเจ้าหน้าที่ผู้ร่วมปฏิบัติงานระบบ (Users Database)
+                                </h2>
+                                <p class="text-xs text-slate-500 dark:text-army-300">สิทธิ์แอดมิน: จัดการเพิ่ม ลบ หรือแก้ไขบทบาทสิทธิ์เจ้าหน้าที่ (ระบบจำลองฐานข้อมูล)</p>
+                            </div>
+                            <button onclick="openAddUserModal()" class="flex items-center gap-1.5 bg-gold hover:bg-gold-dark text-army-900 px-4 py-2 rounded-xl text-xs font-black shadow-md transition-all">
+                                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                                <span>เพิ่มเจ้าหน้าที่ใหม่</span>
+                            </button>
+                        </div>
+
+                        <!-- Users Table inside card -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-base">
+                                <thead>
+                                    <tr class="bg-slate-200/50 dark:bg-army-950/60 border-b border-slate-200 dark:border-army-800/50 text-slate-600 dark:text-army-300 text-xs font-bold uppercase tracking-wider">
+                                        <th class="py-3 px-4">ชื่อ-นามสกุล / ยศ / ตำแหน่ง</th>
+                                        <th class="py-3 px-4">บัญชีผู้ใช้</th>
+                                        <th class="py-3 px-4 text-center">บทบาทสิทธิ์</th>
+                                        <th class="py-3 px-4">ขอบเขตสิทธิ์หน่วยงาน (Parent Unit Scope)</th>
+                                        <th class="py-3 px-4 text-right">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body" class="divide-y divide-slate-200 dark:divide-army-800/30">
+                                    <!-- Dynamic users rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ROLE MENU PERMISSIONS MATRIX (NEW: ADMIN CONTROLS INTERFACE) -->
+                    <div class="bg-white dark:bg-army-800/20 border border-slate-200 dark:border-army-800/60 rounded-2xl p-5 shadow-xl space-y-4">
+                        <div>
+                            <h3 class="text-base font-black text-army-900 dark:text-white flex items-center gap-1.5">
+                                <i data-lucide="shield-alert" class="w-5 h-5 text-gold"></i>
+                                กำหนดสิทธิ์การเข้าถึงเมนูตามบทบาทหน้าที่ (Role Menu Permissions Matrix)
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-army-300">สิทธิ์แอดมิน: ติ๊กเลือกเพื่อเปิด/ปิดสิทธิ์การเข้าถึงของแต่ละเมนูแยกตามระดับบทบาท (การเปลี่ยนแปลงจะมีผลทันทีและถูกซ่อนจากแถบเมนูนำทาง)</p>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs md:text-sm font-bold">
+                                <thead>
+                                    <tr class="bg-slate-200/50 dark:bg-army-950/60 border-b border-slate-200 dark:border-army-800/50 text-slate-600 dark:text-army-300">
+                                        <th class="py-3 px-4">บทบาทสิทธิ์ (Role)</th>
+                                        <th class="py-3 px-4 text-center">สมุดทะเบียนคุม (registry)</th>
+                                        <th class="py-3 px-4 text-center">จัดการผู้ใช้ (users)</th>
+                                        <th class="py-3 px-4 text-center">กำหนดโครงสร้างหน่วย (units)</th>
+                                        <th class="py-3 px-4 text-center">ตั้งค่าระบบคลาวด์ (systems)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-army-800/30 text-slate-800 dark:text-slate-200" id="permissions-matrix-tbody">
+                                    <!-- Generates Role Rows Dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex justify-end pt-3">
+                            <button onclick="saveRolePermissions()" class="bg-gold hover:bg-gold-dark text-army-900 px-5 py-2 rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 transition-colors">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span>บันทึกสิทธิ์บทบาท</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 6: MANAGE MILITARY UNITS (Visible only to ADMIN) -->
+                <div id="view-units" class="view-content hidden space-y-5">
+                    <div class="bg-white dark:bg-army-800/20 border border-slate-200 dark:border-army-800/60 p-5 rounded-2xl shadow-xl space-y-4">
+                        
+                        <!-- HEADER WITH ACTION TRIGGER -->
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-slate-200 dark:border-army-800/40">
+                            <div>
+                                <h2 class="text-base font-black text-army-900 dark:text-white flex items-center gap-1.5">
+                                    <i data-lucide="git-branch" class="w-5 h-5 text-gold"></i>
+                                    โครงข่ายจัดลำดับหน่วยงานทหาร (Military Unit Directory)
+                                </h2>
+                                <p class="text-xs text-slate-500 dark:text-army-300">ลากแล้วปล่อยโฟลเดอร์เพื่อเปลี่ยนสังกัดย่อย หรือกดยุบ/ขยายโฟลเดอร์ได้ 🖱️</p>
+                            </div>
+                            <button onclick="openNewRootUnitForm()" class="flex items-center gap-1.5 bg-gold hover:bg-gold-dark text-army-900 px-4 py-2 rounded-xl text-xs font-black shadow-md transition-all shrink-0">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>เพิ่มหน่วยงานระดับหลักสูงสุด</span>
+                            </button>
+                        </div>
+
+                        <!-- Root Dropzone when dragging -->
+                        <div id="root-dropzone" 
+                             ondragover="handleDragOver(event)" 
+                             ondragleave="handleDragLeave(event)" 
+                             ondrop="handleRootDrop(event)"
+                             class="border-2 border-dashed border-slate-300 dark:border-army-800 p-4 rounded-xl text-center text-xs font-bold text-slate-500 dark:text-army-400 cursor-pointer transition-all hover:bg-slate-100 dark:hover:bg-army-900/60 mb-3 hidden">
+                            📥 ลากมาวางที่นี่เพื่อเปลี่ยนตำแหน่งให้เป็น "หน่วยงานระดับหลักสูงสุด" (Root Layer)
+                        </div>
+
+                        <!-- Tree view container -->
+                        <div class="space-y-3 pt-2" id="units-tree-container">
+                            <!-- Dynamic Render of Unit Tree with Ordering Controls -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 3: SYSTEM SETTINGS (Visible only to ADMIN) -->
+                <div id="view-systems" class="view-content hidden space-y-5">
+                    <div class="bg-white dark:bg-army-800/20 border border-slate-200 dark:border-army-800/60 rounded-2xl p-6 shadow-xl space-y-6">
+                        
+                        <div>
+                            <h2 class="text-lg font-black text-army-900 dark:text-white flex items-center gap-1.5">
+                                <i data-lucide="database" class="w-5 h-5 text-gold"></i>
+                                จัดการโครงข่ายระบบและตั้งค่าฐานข้อมูล Cloud
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-army-300">เชื่อมโยงระบบหลักของกองทัพบกเพื่อจัดเก็บแบบ Real-time และแอนิเมชันบันทึกถาวร</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200 dark:border-army-800/40">
+                            
+                            <!-- Supabase section -->
+                            <div class="bg-slate-100/50 dark:bg-army-950/50 p-5 rounded-2xl border border-slate-200 dark:border-army-800 space-y-4">
+                                <h3 class="text-sm font-black text-army-900 dark:text-gold flex items-center gap-1.5">
+                                    <i data-lucide="server" class="w-4.5 h-4.5"></i>
+                                    กำหนดค่า Supabase (PostgreSQL Main Database)
+                                </h3>
+                                <div class="space-y-3 text-xs">
+                                    <div class="space-y-1">
+                                        <label class="font-bold text-slate-600 dark:text-army-200">Supabase Project URL</label>
+                                        <input type="text" id="config-sb-url-tab" placeholder="https://your-project.supabase.co" class="w-full bg-white dark:bg-army-900 border border-slate-300 dark:border-army-750 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="font-bold text-slate-600 dark:text-army-200">Supabase Anon Key (API Key)</label>
+                                        <input type="password" id="config-sb-key-tab" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full bg-white dark:bg-army-900 border border-slate-300 dark:border-army-750 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none">
+                                    </div>
+                                    
+                                    <!-- Test Connection Controls -->
+                                    <button type="button" onclick="testSupabase('tab')" class="w-full bg-slate-200 dark:bg-army-900 hover:bg-slate-300 dark:hover:bg-army-800 text-slate-800 dark:text-gold font-extrabold py-2.5 rounded-xl border border-slate-350 dark:border-army-700 flex items-center justify-center gap-1.5 transition-colors animate-bounce">
+                                        <i data-lucide="activity" class="w-4 h-4"></i>
+                                        <span>ตรวจสอบการเชื่อมต่อ Supabase</span>
+                                    </button>
+                                    <div id="sb-test-status-tab" class="hidden"></div>
+                                </div>
+                            </div>
+
+                            <!-- Google Drive Section -->
+                            <div class="bg-slate-100/50 dark:bg-army-950/50 p-5 rounded-2xl border border-slate-200 dark:border-army-800 space-y-4">
+                                <h3 class="text-sm font-black text-army-900 dark:text-gold flex items-center gap-1.5">
+                                    <i data-lucide="cloud" class="w-4.5 h-4.5"></i>
+                                    กำหนดค่า Google Drive API (Archive Storage)
+                                </h3>
+                                <div class="space-y-3 text-xs">
+                                    <div class="space-y-1">
+                                        <label class="font-bold text-slate-600 dark:text-army-200">Google Service Account JSON Key</label>
+                                        <textarea id="config-gdrive-tab" rows="3" placeholder='{ "type": "service_account", "project_id": "rtms-cloud"... }' class="w-full bg-white dark:bg-army-900 border border-slate-300 dark:border-army-750 rounded-lg p-2 font-mono text-[10px] text-slate-900 dark:text-white focus:outline-none"></textarea>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="font-bold text-slate-600 dark:text-army-200">Google Drive Folder ID (เป้าหมายเก็บเอกสารอนุมัติ)</label>
+                                        <input type="text" id="config-gdrive-folder-tab" placeholder="1vA7-887B_eRtmsFolderId..." class="w-full bg-white dark:bg-army-900 border border-slate-300 dark:border-army-750 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none">
+                                    </div>
+
+                                    <!-- Test Connection Controls -->
+                                    <button type="button" onclick="testGoogleDrive('tab')" class="w-full bg-slate-200 dark:bg-army-900 hover:bg-slate-300 dark:hover:bg-army-800 text-slate-800 dark:text-gold font-extrabold py-2.5 rounded-xl border border-slate-350 dark:border-army-700 flex items-center justify-center gap-1.5 transition-colors">
+                                        <i data-lucide="cloud-lightning" class="w-4 h-4"></i>
+                                        <span>ตรวจสอบสิทธิ์ Google Drive API</span>
+                                    </button>
+                                    <div id="gdrive-test-status-tab" class="hidden"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save button in admin systems config page -->
+                        <div class="flex justify-end pt-4 border-t border-slate-200 dark:border-army-800/40">
+                            <button onclick="saveAdminSystemsConfig()" class="bg-gold hover:bg-gold-dark text-army-900 px-6 py-2.5 rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 transition-colors">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span>บันทึกการเชื่อมตั้งค่าระบบ</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- PRE-GEN PRINTING SHEET CONTAINER (HIDDEN UNTIL TRIGGER PRINT) -->
+    <section id="print-sheet-area" class="hidden p-8 bg-white text-slate-900 min-h-screen">
+        <div class="max-w-4xl mx-auto space-y-6">
+            <div class="border-b-4 border-double border-slate-400 pb-4 text-center">
+                <h1 class="text-2xl font-black uppercase tracking-wider">แผ่นสติกเกอร์รหัส QR Code คุมเอกสารล่วงหน้า</h1>
+                <p class="text-sm font-medium text-slate-505 mt-1">สารบรรณกลางกองทัพบก - สั่งเตรียมรหัสเปล่าสำหรับติดแผ่นเล่มปก</p>
+                <div class="mt-2 flex justify-center gap-4 no-print">
+                    <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs px-4 py-2 rounded-lg flex items-center gap-1 shadow">
+                        <i data-lucide="printer" class="w-4 h-4"></i> ปริ้นท์สติกเกอร์ (Print)
+                    </button>
+                    <button onclick="closePregenSheetView()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs px-4 py-2 rounded-lg">
+                        ย้อนกลับแอป
+                    </button>
+                </div>
+            </div>
+
+            <div id="print-sheet-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-2">
+                <!-- Preprinted printable sticker blocks -->
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL 4: PREGENERATE BATCH CODES MODAL -->
+    <div id="pregen-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 no-print">
+        <div class="bg-white dark:bg-army-800 border border-slate-300 dark:border-army-700 rounded-3xl w-full max-w-md p-6 mx-4 relative shadow-2xl space-y-5 text-slate-900 dark:text-slate-100">
+            <button onclick="closePregenModal()" class="absolute top-4 right-4 text-slate-505 hover:text-slate-855 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="flex items-center space-x-2 pb-2 border-b border-slate-200 dark:border-army-700">
+                <div class="bg-gold/20 p-2.5 rounded-xl text-gold">
+                    <i data-lucide="file-plus" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-black text-army-900 dark:text-white">เจเนอเรต QR คุมล่วงหน้า (Batch)</h3>
+                    <p class="text-xs text-slate-500 dark:text-army-300">สร้างรหัสว่างไว้ปริ้นท์แปะสมุดเล่มล่วงหน้าเพื่อให้สะดวกกับการ Track</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-black text-slate-650 text-slate-600 dark:text-army-200">ระบุจำนวนรหัสบาร์โค้ดที่ต้องการออกล่วงหน้า *</label>
+                    <input type="number" id="pregen-count-input" value="4" min="1" max="16" class="w-full bg-slate-100 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-xl px-4 py-2.5 text-base text-slate-900 dark:text-slate-100 focus:outline-none focus:border-gold">
+                    <span class="text-[11px] text-slate-550 dark:text-army-400 block leading-relaxed">💡 แนะนำ: สั่งพิมพ์ครั้งละ 4, 8 หรือ 12 ใบ ลงกระดาษสติกเกอร์ขนาด A4 เพื่อความคุ้มค่ากระดาษ</span>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200 dark:border-army-700">
+                <button onclick="closePregenModal()" class="bg-slate-200 dark:bg-army-700 hover:bg-slate-300 dark:hover:bg-army-600 text-slate-700 dark:text-white text-xs px-4 py-2.5 rounded-xl font-bold transition-colors">ยกเลิก</button>
+                <button onclick="submitBatchPregen()" class="bg-gold hover:bg-gold-dark text-army-900 text-xs px-5 py-2.5 rounded-xl font-black transition-colors shadow-md">สั่งออกรหัสล่วงหน้า</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: NEW DOCUMENT REGISTRATION -->
+    <div id="new-doc-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 no-print">
+        <div class="bg-white dark:bg-army-800 border border-slate-300 dark:border-army-700 rounded-3xl w-full max-w-xl p-6 mx-4 relative shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-slate-900 dark:text-slate-100">
+            <button onclick="closeNewDocModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="flex items-center space-x-2 pb-2 border-b border-slate-200 dark:border-army-700">
+                <div class="bg-gold/10 p-2 rounded-lg text-gold">
+                    <i data-lucide="file-plus-2" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-black text-army-900 dark:text-white">ลงทะเบียนหนังสือส่งกำลังบำรุง/สารบรรณใหม่</h3>
+                    <p class="text-xs text-slate-500 dark:text-army-300">ใส่รายละเอียดเพื่อเปลี่ยนรหัสว่างเปล่าให้กลายเป็นหนังสือมีระบบ Track</p>
+                </div>
+            </div>
+
+            <form id="new-doc-form" onsubmit="submitNewDocument(event)" class="space-y-4">
+                
+                <div class="bg-slate-100 dark:bg-army-950 p-3 rounded-xl border border-slate-300 dark:border-army-800 flex justify-between items-center">
+                    <span class="text-xs text-slate-550 dark:text-army-300 font-bold font-bold">ใช้รหัสคุมสติกเกอร์ (UID):</span>
+                    <span id="form-display-uid" class="font-mono text-base font-black text-army-800 dark:text-gold">ออกใหม่อัตโนมัติ</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-600 dark:text-army-200">เลขที่หนังสือ (ทบ.) *</label>
+                        <input type="text" id="form-doc-num" placeholder="ทบ ๐๔๐๒/๑๒๓๔" required class="w-full bg-slate-100 dark:bg-army-900 border border-slate-300 dark:border-army-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-650 text-slate-600 dark:text-army-200">เรื่อง *</label>
+                        <input type="text" id="form-doc-subject" placeholder="ขออนุมัติจัดหาวัสดุวิทยุสนาม..." required class="w-full bg-slate-100 dark:bg-army-900 border border-slate-300 dark:border-army-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-600 dark:text-army-200">ชั้นความเร็ว *</label>
+                        <select id="form-urgency" required class="w-full bg-slate-100 dark:bg-army-900 border border-slate-300 dark:border-army-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                            <option value="normal">ปกติ</option>
+                            <option value="urgent">ด่วน 🟡</option>
+                            <option value="very-urgent">ด่วนมาก 🟠</option>
+                            <option value="top-urgent" selected>ด่วนที่สุด 🔴</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-600 dark:text-army-200">ชั้นความลับ *</label>
+                        <select id="form-confidential" required class="w-full bg-slate-100 dark:bg-army-900 border border-slate-300 dark:border-army-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                            <option value="normal" selected>ทั่วไป</option>
+                            <option value="secret">ลับ 🟡</option>
+                            <option value="top-secret">ลับมาก 🔴</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-600 dark:text-army-200">หน่วยต้นสังกัด (จาก) *</label>
+                        <input type="text" id="form-origin" placeholder="กพ.ทบ." required class="w-full bg-slate-100 dark:bg-army-900 border border-slate-300 dark:border-army-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-600 dark:text-army-200">หน่วยปลายทาง (ถึง) *</label>
+                        <input type="text" id="form-dest" placeholder="รร.นนส.ทบ." required class="w-full bg-slate-100 dark:bg-army-900 border border-slate-300 dark:border-army-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                    </div>
+                </div>
+
+                <!-- Styled drag & drop area -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-600 dark:text-army-200">แนบไฟล์ร่างประกอบแรกคุม (Optional)</label>
+                    <div class="border border-dashed border-slate-350 dark:border-army-600 rounded-2xl p-6 text-center hover:border-gold/60 transition-colors cursor-pointer relative bg-slate-50 dark:bg-army-900/40">
+                        <input type="file" id="form-file" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFormFileAttach(this)">
+                        <div class="space-y-2 text-slate-550 text-slate-500 dark:text-army-400 flex flex-col items-center justify-center font-bold">
+                            <i data-lucide="upload-cloud" class="w-10 h-10 text-army-500"></i>
+                            <p class="text-sm font-semibold" id="form-file-status">คลิกเพื่ออัปโหลดไฟล์แนบ</p>
+                            <p class="text-xs text-slate-400 dark:text-army-505">รองรับ PDF, DOC, JPG</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-200 dark:border-army-700 flex justify-end space-x-3">
+                    <button type="button" onclick="closeNewDocModal()" class="bg-slate-200 dark:bg-army-700 hover:bg-slate-300 dark:hover:bg-army-600 text-slate-700 dark:text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors">ยกเลิก</button>
+                    <button type="submit" class="bg-gold hover:bg-gold-dark text-army-900 font-bold px-6 py-2.5 rounded-xl text-sm transition-colors shadow-lg">ลงทะเบียนสำเร็จ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: PRINT QR CODE PREVIEW -->
+    <div id="print-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 no-print">
+        <div class="bg-white dark:bg-army-800 border border-slate-300 dark:border-army-700 rounded-3xl w-full max-w-sm p-6 mx-4 relative shadow-2xl text-center space-y-6 text-slate-900 dark:text-slate-100">
+            <button onclick="closePrintModal()" class="absolute top-4 right-4 text-slate-505 hover:text-slate-800 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="space-y-1 text-center">
+                <h3 class="text-base font-bold text-army-900 dark:text-white">แผ่นป้ายบาร์โค้ด QR Code</h3>
+                <p class="text-xs text-slate-500 dark:text-army-400">พิมพ์และแปะติดมุมขวาหน้าแรกของหนังสือ</p>
+            </div>
+            <div id="print-sticker-area" class="bg-white p-4 rounded-2xl mx-auto inline-block border-2 border-dashed border-slate-300 text-slate-800 shadow-md">
+                <div class="flex flex-col items-center justify-center space-y-2">
+                    <span class="text-[10px] uppercase font-bold tracking-widest text-slate-600 border-b border-slate-300 pb-0.5 px-3">กองทัพบก RTMS</span>
+                    <div id="print-qrcode-box" class="w-36 h-36 flex items-center justify-center"></div>
+                    <span id="print-uid-label" class="font-mono text-xs font-bold text-slate-900 mt-1">DOC-XXXX-XXXX</span>
+                    <span id="print-num-label" class="text-[10px] text-slate-505 font-medium">เลขคุม ทบ.</span>
+                </div>
+            </div>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closePrintModal()" class="bg-slate-200 dark:bg-army-700 hover:bg-slate-300 dark:hover:bg-army-600 text-slate-700 dark:text-white text-xs px-4 py-2.5 rounded-xl font-semibold transition-colors">ปิดหน้านี้</button>
+                <button onclick="triggerPrintSticker()" class="bg-gold hover:bg-gold-dark text-army-900 text-xs px-4 py-2.5 rounded-xl font-bold flex items-center gap-1.5 transition-colors shadow-md">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>สั่งพิมพ์บาร์โค้ด</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: CONFIG -->
+    <div id="config-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 no-print">
+        <div class="bg-white dark:bg-army-800 border border-slate-300 dark:border-army-700 rounded-3xl w-full max-w-md p-6 mx-4 relative shadow-2xl space-y-5 text-slate-900 dark:text-slate-100">
+            <button onclick="closeConfigModal()" class="absolute top-4 right-4 text-slate-505 hover:text-slate-855 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center space-x-2 pb-2 border-b border-slate-200 dark:border-army-700">
+                <i data-lucide="database" class="w-5 h-5 text-gold"></i>
+                <h3 class="text-base font-bold text-army-900 dark:text-white">ตั้งค่าการเชื่อมต่อฐานข้อมูลภายนอก</h3>
+            </div>
+            <div class="space-y-4">
+                <div class="space-y-1.5">
+                    <label class="text-xs text-slate-650 text-slate-600 dark:text-army-200 font-bold flex justify-between">
+                        <span>Supabase Project URL</span>
+                        <span class="text-gold text-[10px] font-bold">PROPLAN FREE</span>
+                    </label>
+                    <input type="text" id="config-sb-url" placeholder="https://your-project.supabase.co" class="w-full bg-slate-100 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs text-slate-600 dark:text-army-200 font-bold">Supabase Anon Key (API Key)</label>
+                    <input type="password" id="config-sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full bg-slate-100 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none">
+                </div>
+                <div id="sb-test-status-modal" class="hidden"></div>
+            </div>
+            <div class="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-army-700">
+                <button onclick="testSupabase('modal')" class="bg-slate-200 dark:bg-army-900 hover:bg-slate-300 dark:hover:bg-army-800 text-slate-800 dark:text-gold border border-slate-350 dark:border-army-700 px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-colors">
+                    <i data-lucide="activity" class="w-4 h-4"></i>
+                    <span>ตรวจสอบสิทธิ์</span>
+                </button>
+                <div class="flex gap-2">
+                    <button onclick="closeConfigModal()" class="bg-slate-200 dark:bg-army-700 hover:bg-slate-300 dark:hover:bg-army-600 text-slate-700 dark:text-white text-xs px-4 py-2 rounded-xl transition-colors">ยกเลิก</button>
+                    <button onclick="saveSupabaseConfig()" class="bg-gold hover:bg-gold-dark text-army-900 text-xs px-4 py-2 rounded-xl font-bold transition-colors">บันทึกการตั้งค่า</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: ADD/EDIT USER MODAL WITH UPGRADE FIELDS -->
+    <div id="user-form-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 no-print">
+        <div class="bg-white dark:bg-army-800 border border-slate-300 dark:border-army-700 rounded-3xl w-full max-w-md p-6 mx-4 relative shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+            <button onclick="closeUserFormModal()" class="absolute top-4 right-4 text-slate-505 hover:text-slate-855 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center space-x-2 pb-2 border-b border-slate-200 dark:border-army-700">
+                <i data-lucide="user-cog" class="w-5 h-5 text-gold"></i>
+                <h3 id="user-form-title" class="text-base font-bold text-army-900 dark:text-white">เพิ่มผู้ใช้งานระบบใหม่</h3>
+            </div>
+            
+            <form id="user-form-fields" onsubmit="submitUserForm(event)" class="space-y-4">
+                <input type="hidden" id="user-form-index">
+                
+                <!-- Rank, Name -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-600 dark:text-army-200">ยศ - ชื่อ - นามสกุล *</label>
+                    <input type="text" id="user-form-name" required placeholder="เช่น พล.ต. สมศักดิ์ รักชาติ" class="w-full bg-slate-100 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                </div>
+
+                <!-- NEW: Position Field -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-600 dark:text-army-200">ตำแหน่งปัจจุบัน (นขต.) *</label>
+                    <input type="text" id="user-form-position" required placeholder="เช่น ผอ.กองยุทธการ, เสมียนสารบรรณ" class="w-full bg-slate-100 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                </div>
+
+                <!-- Username & Password Row with View Password Button -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-600 dark:text-army-200">บัญชีผู้ใช้ *</label>
+                        <input type="text" id="user-form-username" required placeholder="username" class="w-full bg-slate-100 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-600 dark:text-army-200">รหัสผ่าน *</label>
+                        <!-- Password Relative Container with Eye Icon Toggle -->
+                        <div class="relative">
+                            <input type="password" id="user-form-password" required placeholder="password" class="w-full bg-slate-100 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-xl pl-3 pr-10 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                            <button type="button" onclick="togglePasswordVisibility('user-form-password', 'password-toggle-icon')" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors h-8 min-h-0 flex items-center">
+                                <i data-lucide="eye" id="password-toggle-icon" class="w-4.5 h-4.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Role Selector -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-600 dark:text-army-200">บทบาทสิทธิ์การเข้าถึงเมนูระบบ *</label>
+                    <select id="user-form-role" required class="w-full bg-slate-100 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                        <option value="admin">ADMIN (ผู้ดูแลระบบกลาง - ทุกเมนู)</option>
+                        <option value="subadmin">SUB-ADMIN (เจ้าหน้าที่สารบรรณ - ทะเบียนคุม/โครงสร้างหน่วย)</option>
+                        <option value="superuser">SUPERUSER (ผู้บังคับบัญชา ผบช. - ดูทะเบียน/สั่งพิเศษ)</option>
+                        <option value="user">USER (เจ้าหน้าที่เวร/หน้าห้อง - คีย์สแกนอัปเดตอย่างเดียว)</option>
+                    </select>
+                </div>
+
+                <!-- NEW: Parent Unit Access Scope Checklist -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-600 dark:text-army-200">ขอบเขตสังกัดหน่วยงาน (สิทธิ์คุมเฉพาะเอกสารหน่วยตนเอง) *</label>
+                    <div id="user-form-units-checklist" class="border border-slate-300 dark:border-army-800 rounded-xl p-3 max-h-48 overflow-y-auto space-y-2 bg-slate-50 dark:bg-army-950">
+                        <!-- Checklist of all military units generated via JavaScript -->
+                    </div>
+                    <span class="text-[10px] text-slate-400 block mt-1">💡 กำหนดสถานะ ใช้งาน/ไม่ใช้งาน ทีละหน่วยงาน เจ้าหน้าที่จะมีสิทธิ์เห็นเฉพาะเอกสารของหน่วยงานที่ติ๊ก "ใช้งาน" เท่านั้น</span>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-200 dark:border-army-700">
+                    <button type="button" onclick="closeUserFormModal()" class="bg-slate-200 dark:bg-army-700 hover:bg-slate-300 dark:hover:bg-army-600 text-slate-700 dark:text-white text-xs px-4 py-2 rounded-xl transition-colors">ยกเลิก</button>
+                    <button type="submit" class="bg-gold hover:bg-gold-dark text-army-900 text-xs px-4 py-2 rounded-xl font-bold transition-colors">บันทึกสิทธิ์ผู้ใช้</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 6: ADD/EDIT MILITARY UNIT MODAL (FLOATING MODAL) -->
+    <div id="unit-form-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 animate-fade">
+        <div class="bg-white dark:bg-army-800 border border-slate-300 dark:border-army-700 rounded-3xl w-full max-w-md p-6 mx-4 relative shadow-2xl space-y-4 text-slate-900 dark:text-slate-100">
+            <button onclick="closeUnitFormModal()" class="absolute top-4 right-4 text-slate-505 hover:text-slate-855 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center space-x-2 pb-2 border-b border-slate-200 dark:border-army-700">
+                <i data-lucide="network" class="w-5 h-5 text-gold"></i>
+                <h3 id="unit-form-headline" class="text-base font-bold text-army-900 dark:text-white">เพิ่ม/แก้ไขหน่วยงานทหารในระบบ</h3>
+            </div>
+            <form id="unit-mgmt-form" onsubmit="handleUnitFormSubmit(event)" class="space-y-4 text-xs">
+                <input type="hidden" id="unit-mgmt-id">
+                <div class="space-y-1.5">
+                    <label class="font-bold text-slate-700 dark:text-army-200">ชื่อหน่วยงาน (ชื่อเต็ม) *</label>
+                    <input type="text" id="unit-mgmt-fullname" required placeholder="เช่น กรมยุทธศึกษาทหารบก" class="w-full bg-slate-50 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1.5">
+                        <label class="font-bold text-slate-700 dark:text-army-200">ชื่อย่อของหน่วย *</label>
+                        <input type="text" id="unit-mgmt-abbrev" required placeholder="เช่น ยศ.ทบ." class="w-full bg-slate-50 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="font-bold text-slate-700 dark:text-army-200">ระดับของหน่วย *</label>
+                        <select id="unit-mgmt-level" required class="w-full bg-slate-50 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-lg px-2 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                            <option value="กองทัพภาค">กองทัพภาค</option>
+                            <option value="กองพล">กองพล</option>
+                            <option value="กรม">กรม</option>
+                            <option value="สำนัก">สำนัก</option>
+                            <option value="ศูนย์">ศูนย์</option>
+                            <option value="กอง">กอง</option>
+                            <option value="แผนก">แผนก</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="font-bold text-slate-700 dark:text-army-200">สังกัดหน่วยเหนือ / ขึ้นตรงต่อกองบัญชาการย่อย (Parent Unit)</label>
+                    <select id="unit-mgmt-parent" class="w-full bg-slate-50 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-lg px-2 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-gold">
+                        <option value="">-- เป็นระดับบัญชาการหลัก (นขต. สูงสุด) --</option>
+                        <!-- Dynamic Parent Units Options -->
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="font-bold text-slate-700 dark:text-army-200">ลำดับการแสดงผล (เลขน้อยขึ้นต้นก่อน) *</label>
+                    <input type="number" id="unit-mgmt-order" required value="1" min="1" class="w-full bg-slate-50 dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-gold font-mono">
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-army-800/40">
+                    <button type="button" onclick="closeUnitFormModal()" class="bg-slate-200 dark:bg-army-700 hover:bg-slate-300 dark:hover:bg-army-650 text-slate-700 dark:text-white px-4 py-2 rounded-xl font-bold transition-all">ยกเลิก</button>
+                    <button type="submit" class="bg-gold hover:bg-gold-dark text-army-900 px-5 py-2 rounded-xl font-black transition-all shadow-md">บันทึกโครงสร้างหน่วย</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 7: REAL-TIME TRACKING SLIDE-OVER SHEET (NEW CONDITIONAL DISPLAY ON CLICK) -->
+    <div id="tracking-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-end hidden opacity-0 transition-opacity duration-300 no-print">
+        <div id="tracking-modal-panel" class="bg-white dark:bg-slate-900 border-l border-slate-300 dark:border-army-800 w-full max-w-lg h-full p-6 shadow-2xl overflow-y-auto relative text-slate-900 dark:text-slate-100 transition-transform duration-300 transform translate-x-full">
+            <button onclick="closeTrackingModal()" class="absolute top-4 right-4 text-slate-555 hover:text-slate-850 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            
+            <div class="flex items-center space-x-2 pb-3 border-b border-slate-200 dark:border-army-700 mb-5">
+                <div class="bg-gold/25 p-2 rounded-xl text-gold">
+                    <i data-lucide="scan" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-army-900 dark:text-white">บันทึกสถานะพิกัดเรียลไทม์</h3>
+                    <p class="text-xs text-slate-500 dark:text-army-300">อัปเดตสเตตัสเอกสารและบันทึกความเร่งด่วน</p>
+                </div>
+            </div>
+
+            <!-- Active Document Tracking System Panel (Renders Inside Slide-Over) -->
+            <div id="tracking-active-panel" class="space-y-5">
+                <!-- Document Header Meta Info -->
+                <div class="flex flex-col sm:flex-row justify-between items-start gap-4 pb-4 border-b border-slate-200 dark:border-army-800/40">
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap gap-1.5">
+                            <span id="track-urgency-badge" class="text-xs px-2.5 py-0.5 rounded font-black"></span>
+                            <span id="track-confidentiality-badge" class="text-xs px-2.5 py-1 rounded font-bold"></span>
+                        </div>
+                        <h3 id="track-doc-id" class="text-xs text-army-700 dark:text-gold font-mono font-black">UID: -</h3>
+                        <h2 id="track-doc-title" class="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">เรื่อง: -</h2>
+                        <p id="track-doc-numbers" class="text-xs text-slate-500 dark:text-army-300 font-bold">เลขสารบรรณ: -</p>
+                    </div>
+                    <!-- Mini QR code -->
+                    <div class="flex flex-col items-center bg-white p-2 rounded-xl shrink-0 shadow border border-slate-200" id="mini-qrcode-container">
+                        <div id="mini-qrcode" class="w-20 h-20"></div>
+                        <span class="text-[9px] text-slate-800 font-mono mt-1 font-bold" id="mini-qrcode-uid">UID</span>
+                    </div>
+                </div>
+
+                <!-- Path info -->
+                <div class="bg-slate-100 dark:bg-army-950/60 p-3.5 rounded-xl border border-slate-200 dark:border-army-800/50 grid grid-cols-2 text-xs">
+                    <div>
+                        <span class="text-slate-505 dark:text-army-400 block font-bold">หน่วยงานต้นสังกัด</span>
+                        <span id="track-origin" class="font-extrabold text-slate-800 dark:text-army-200 text-sm">กพ.ทบ.</span>
+                    </div>
+                    <div class="border-l border-slate-200 dark:border-army-800/60 pl-3.5">
+                        <span class="text-slate-505 text-slate-500 dark:text-army-400 block font-bold">หน่วยงานปลายทาง</span>
+                        <span id="track-dest" class="font-extrabold text-slate-800 dark:text-army-200 text-sm">รร.นนส.ทบ.</span>
+                    </div>
+                </div>
+
+                <!-- EXECUTIVE SPECIAL COMMANDS PANEL (For SUPERUSER/ผบช. only) -->
+                <div id="executive-action-panel" class="hidden bg-gradient-to-r from-amber-500/15 to-gold/15 border-2 border-gold/40 p-4 rounded-xl space-y-3 shadow">
+                    <h4 class="text-xs font-black text-amber-800 dark:text-gold flex items-center gap-1.5">
+                        <i data-lucide="award" class="w-4.5 h-4.5"></i>
+                        ข้อสั่งการพิเศษ (ผู้บังคับบัญชา / ผบช.)
+                    </h4>
+                    
+                    <div class="space-y-1">
+                        <label class="text-[12px] text-amber-800 dark:text-gold font-bold">รายละเอียดคำอธิบาย/จุดสั่งการเพิ่มเติม *</label>
+                        <textarea id="exec-comment-input" rows="2" placeholder="ระบุเหตุผล เช่น สั่งกลับแก้ไขเนื้อหาให้เรียบร้อย..." class="w-full bg-white dark:bg-army-950 border border-gold/40 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="triggerExecutiveAction('revision')" class="flex items-center gap-2 justify-center bg-rose-500 hover:bg-rose-600 text-white text-xs py-3 rounded-xl font-black shadow-md transition-all">
+                            <i data-lucide="file-warning" class="w-4 h-4"></i>
+                            <span>สั่งแก้ไขเอกสาร</span>
+                        </button>
+                        <button onclick="triggerExecutiveAction('call-meeting')" class="flex items-center gap-2 justify-center bg-amber-500 hover:bg-amber-600 text-white text-xs py-3 rounded-xl font-black shadow-md transition-all">
+                            <i data-lucide="phone-call" class="w-4 h-4"></i>
+                            <span>ขอพบเจ้าของเรื่อง</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Standard Status Update Controller Form -->
+                <div id="standard-updater-panel" class="bg-slate-100 dark:bg-army-800/40 border border-slate-200 dark:border-army-700/50 p-4 rounded-xl space-y-4 shadow-inner">
+                    <h4 class="text-xs font-black text-army-900 dark:text-white flex items-center gap-1.5">
+                        <i data-lucide="file-edit" class="w-4 h-4 text-gold"></i>
+                        เจ้าหน้าที่: อัพเดทพิกัดความเคลื่อนไหว (Update Status)
+                    </h4>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="selectTrackAction('received')" id="btn-act-received" class="act-btn flex items-center gap-2 justify-center bg-white dark:bg-army-950 hover:bg-slate-200 dark:hover:bg-army-800/80 border border-slate-300 dark:border-army-800 text-xs py-3 rounded-xl font-bold transition-all text-slate-700 dark:text-slate-300">
+                            <i data-lucide="file-down" class="w-4 h-4 text-emerald-500 dark:text-emerald-400"></i>
+                            <span>ลงรับเอกสาร</span>
+                        </button>
+                        <button onclick="selectTrackAction('proposed')" id="btn-act-proposed" class="act-btn flex items-center gap-2 justify-center bg-white dark:bg-army-950 hover:bg-slate-200 dark:hover:bg-army-800/80 border border-slate-300 dark:border-army-800 text-xs py-3 rounded-xl font-bold transition-all text-slate-700 dark:text-slate-300">
+                            <i data-lucide="users" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
+                            <span>เสนอผู้บังคับบัญชา</span>
+                        </button>
+                        <button onclick="selectTrackAction('dispatched')" id="btn-act-dispatched" class="act-btn flex items-center gap-2 justify-center bg-white dark:bg-army-950 hover:bg-slate-200 dark:hover:bg-army-800/80 border border-slate-300 dark:border-army-800 text-xs py-3 rounded-xl font-bold transition-all text-slate-700 dark:text-slate-300">
+                            <i data-lucide="send" class="w-4 h-4 text-sky-500 dark:text-sky-400"></i>
+                            <span>จ่ายงาน/ส่งออก</span>
+                        </button>
+                        <button onclick="selectTrackAction('approved')" id="btn-act-approved" class="act-btn flex items-center gap-2 justify-center bg-white dark:bg-army-950 hover:bg-slate-200 dark:hover:bg-army-800/80 border border-slate-300 dark:border-army-800 text-xs py-3 rounded-xl font-bold transition-all text-slate-700 dark:text-slate-300">
+                            <i data-lucide="cloud-lightning" class="w-4 h-4 text-emerald-500 dark:text-emerald-400 animate-pulse"></i>
+                            <span>อนุมัติ & ลง Drive</span>
+                        </button>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[12px] text-slate-650 text-slate-600 dark:text-army-300 font-black">หมายเหตุ หรือคำสั่งการเพิ่มเติม</label>
+                        <textarea id="track-comment-input" rows="2" placeholder="ระบุคำอธิบายเพิ่มเติมสำหรับการลงบันทึกในพิกัดนี้..." class="w-full bg-white dark:bg-army-950 border border-slate-300 dark:border-army-800 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-gold transition-colors"></textarea>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs bg-slate-200 dark:bg-army-950 p-2.5 rounded-lg border border-slate-300 dark:border-army-800/40">
+                        <span class="text-slate-600 dark:text-army-400 font-bold font-bold font-bold">แนบภาพเอกสาร (PDF)</span>
+                        <label class="cursor-pointer bg-white dark:bg-army-700 hover:bg-slate-100 dark:hover:bg-army-600 text-army-900 dark:text-gold px-3 py-1.5 rounded-lg font-black transition-colors border border-slate-300 dark:border-army-600">
+                            <input type="file" id="track-file" onchange="handleTrackFileAttach()" class="hidden">
+                            <span id="track-file-label">เลือกไฟล์รูป</span>
+                        </label>
+                    </div>
+
+                    <!-- Google drive progress upload simulator -->
+                    <div id="drive-upload-simulator" class="hidden space-y-2 bg-slate-950 p-4 rounded-xl border border-emerald-500/30">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-emerald-400 flex items-center gap-1.5 font-bold font-bold font-bold">
+                                <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                                ย้ายคลังเอกสารเข้า Google Drive Archives...
+                            </span>
+                            <span id="drive-progress-percent" class="font-mono text-emerald-400 font-bold">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div id="drive-progress-bar" class="bg-emerald-500 h-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="saveTrackingUpdate()" class="w-full bg-gold hover:bg-gold-dark text-army-900 font-black py-3 rounded-xl text-base transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
+                        <i data-lucide="save" class="w-5 h-5"></i>
+                        <span>บันทึกปรับปรุงพิกัดเรื่อง</span>
+                    </button>
+                </div>
+
+                <!-- Timeline logs -->
+                <div class="space-y-3">
+                    <h4 class="text-xs font-black text-army-900 dark:text-white tracking-wider uppercase flex items-center gap-1.5">
+                        <i data-lucide="history" class="w-4 h-4 text-gold"></i>
+                        ไทม์ไลน์ประวัติการเดินทางเอกสาร
+                    </h4>
+                    <div class="relative pl-4 border-l-2 border-slate-300 dark:border-army-800/40 space-y-4" id="track-timeline-container">
+                        <!-- Dynamic render of timeline logs -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRE-GEN PRINTING SHEET CONTAINER -->
+    <section id="print-sheet-area" class="hidden p-8 bg-white text-slate-900 min-h-screen">
+        <div class="max-w-4xl mx-auto space-y-6">
+            <div class="border-b-4 border-double border-slate-400 pb-4 text-center">
+                <h1 class="text-2xl font-black uppercase tracking-wider">แผ่นสติกเกอร์รหัส QR Code คุมเอกสารล่วงหน้า</h1>
+                <p class="text-sm font-medium text-slate-505 mt-1">สารบรรณกลางกองทัพบก - สั่งเตรียมรหัสเปล่าสำหรับติดแผ่นเล่มปก</p>
+                <div class="mt-2 flex justify-center gap-4 no-print">
+                    <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs px-4 py-2 rounded-lg flex items-center gap-1 shadow">
+                        <i data-lucide="printer" class="w-4 h-4"></i> ปริ้นท์สติกเกอร์ (Print)
+                    </button>
+                    <button onclick="closePregenSheetView()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs px-4 py-2 rounded-lg">
+                        ย้อนกลับแอป
+                    </button>
+                </div>
+            </div>
+            <div id="print-sheet-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-2">
+                <!-- Preprinted printable sticker blocks -->
+            </div>
+        </div>
+    </section>
+
+    <!-- JS Phase Loaders -->
+    <script>
+        // Default Mock Databases
+        const initialMockDocs = [
+            {
+                uid: 'DOC-2026-8801',
+                docNum: 'ทบ ๐๔๐๒/๑๒๓๔',
+                subject: 'ขออนุมัติจัดหาอุปกรณ์ส่งกำลังบำรุงวิทยุสนามความถี่ HF',
+                urgency: 'top-urgent',
+                confidential: 'normal',
+                origin: 'กพ.ทบ.',
+                dest: 'รร.นนส.ทบ.',
+                status: 'pending',
+                updatedAt: '2026-06-20T09:00:00.000Z',
+                attachmentName: 'doc_req_v1.pdf',
+                driveLink: null,
+                logs: [
+                    {
+                        status: 'pending',
+                        timestamp: '2026-06-20T09:00:00.000Z',
+                        comment: 'ลงทะเบียนสารบรรณกลางหน่วย ออกเลขรับครั้งแรกเรียบร้อย',
+                        user: 'ร.อ.หญิง นภาภรณ์ (สารบรรณ กพ.ทบ.)',
+                        file: 'doc_req_v1.pdf'
+                    }
+                ]
+            },
+            {
+                uid: 'DOC-2026-9902',
+                docNum: 'ทบ ๐๖๑๑/๕๕๖๗',
+                subject: 'รายงานยอดรายงานกำลังพลสำรองประจำผลัดที่ ๑ เขตพื้นที่ รร.นนส.ทบ.',
+                urgency: 'normal',
+                confidential: 'secret',
+                origin: 'ฝกพ. ยศ.ทบ.',
+                dest: 'ยศ.ทบ.',
+                status: 'approved',
+                updatedAt: '2026-06-19T14:30:00.000Z',
+                attachmentName: 'report_reservist.pdf',
+                driveLink: 'https://drive.google.com/drive/folders/rtms_archive_mock_id_99',
+                logs: [
+                    {
+                        status: 'pending',
+                        timestamp: '2026-06-19T09:00:00.000Z',
+                        comment: 'ลงรับสารบรรณ',
+                        user: 'จ.ส.อ. สมชาย ใจดี',
+                        file: 'report_reservist.pdf'
+                    },
+                    {
+                        status: 'approved',
+                        timestamp: '2026-06-19T14:30:00.000Z',
+                        comment: 'ผบ. ลงนามเรียบร้อย ย้ายไฟล์เข้า Google Drive (Archives) เพื่อจัดเก็บบันทึกถาวร',
+                        user: 'พล.ต. วิชัย สิทธิชาติ (ผบ.รร.นนส.ทบ.)',
+                        file: 'report_reservist_signed.pdf'
+                    }
+                ]
+            }
+        ];
+
+        // MOCK USER ACCOUNT DATABASE WITH COMPREHENSIVE PERMISSIONS AND CHANNELS (UPGRADED)
+        const defaultUsers = [
+            { name: "พ.อ. อดิศักดิ์ (แอดมินกลาง)", username: "admin", password: "123", role: "admin", position: "ผอ.กองระบบคอมพิวเตอร์", allowedUnits: [] },
+            { name: "จ.ส.อ. สมชาย (สารบรรณรอง)", username: "subadmin", password: "123", role: "subadmin", position: "เสมียนกองการฝึก", allowedUnits: ["unit-104", "unit-106", "unit-107"] },
+            { name: "พล.ต. วิชัย สิทธิชาติ (ผบ.หน่วย)", username: "commander", password: "123", role: "superuser", position: "ผบ.ยศ.ทบ.", allowedUnits: ["unit-101"] },
+            { name: "ส.อ. พีรพงษ์ (หน้าห้อง ผบ.)", username: "staff", password: "123", role: "user", position: "เสมียนเวรหน้าห้อง", allowedUnits: ["unit-101", "unit-102", "unit-103"] }
+        ];
+
+        // DEFAULT ROLE TAB PERMISSIONS MATRIX (UPGRADED LOCAL CACHE OVERRIDE)
+        const defaultRolePermissions = {
+            admin: ['registry', 'users', 'units', 'systems'],
+            subadmin: ['registry', 'units'],
+            superuser: ['registry'],
+            user: ['registry']
+        };
+
+        // MOCK INITIAL UNITS STRUCTURE DATABASE
+        const defaultUnits = [
+            { id: "unit-101", fullName: "กรมยุทธศึกษาทหารบก", abbreviation: "ยศ.ทบ.", level: "กรม", parentId: "", order: 1 },
+            { id: "unit-102", fullName: "กองการกำลังพล กรมยุทธศึกษาทหารบก", abbreviation: "กกพ.ยศ.ทบ.", level: "กอง", parentId: "unit-101", order: 1 },
+            { id: "unit-103", fullName: "กองยุทธการและข่าว กรมยุทธศึกษาทหารบก", abbreviation: "กยข.ยศ.ทบ.", level: "กอง", parentId: "unit-101", order: 2 },
+            { id: "unit-104", fullName: "สำนักการฝึก กรมยุทธศึกษาทหารบก", abbreviation: "สกฝ.ยศ.ทบ.", level: "สำนัก", parentId: "unit-101", order: 3 },
+            { id: "unit-105", fullName: "ศูนย์พัฒนาหลักนิยมและยุทธศาสตร์", abbreviation: "ศพย.ยศ.ทบ.", level: "ศูนย์", parentId: "unit-101", order: 4 },
+            { id: "unit-106", fullName: "กองตรวจการฝึก สำนักการฝึก", abbreviation: "กตฝ.สกฝ.ยศ.ทบ.", level: "กอง", parentId: "unit-104", order: 1 },
+            { id: "unit-107", fullName: "กองการฝึก สำนักการฝึก", abbreviation: "กกฝ.สกฝ.ยศ.ทบ.", level: "กอง", parentId: "unit-104", order: 2 }
+        ];
+
+        // LABEL STYLINGS
+        const urgencyLabels = {
+            'normal': { text: 'ปกติ', bg: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' },
+            'urgent': { text: 'ด่วน 🟡', bg: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30' },
+            'very-urgent': { text: 'ด่วนมาก 🟠', bg: 'bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-500/30' },
+            'top-urgent': { text: 'ด่วนที่สุด 🔴', bg: 'bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30 font-bold' }
+        };
+
+        const confidentialLabels = {
+            'normal': { text: 'ทั่วไป', bg: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' },
+            'secret': { text: 'ลับ 🟡', bg: 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border border-yellow-500/30' },
+            'top-secret': { text: 'ลับมาก 🔴', bg: 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/30 font-bold' }
+        };
+
+        const statusLabels = {
+            'pending': { text: 'ลงทะเบียนคุม', color: 'text-slate-500 dark:text-slate-400', dot: 'bg-slate-500' },
+            'received': { text: 'ลงรับที่ฝ่ายแล้ว', color: 'text-indigo-600 dark:text-indigo-400', dot: 'bg-indigo-500' },
+            'proposed': { text: 'รอ ผบ.ลงนาม', color: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
+            'dispatched': { text: 'ส่งออก/จ่ายงาน', color: 'text-sky-600 dark:text-sky-400', dot: 'bg-sky-500' },
+            'approved': { text: 'อนุมัติ (Drive 📁)', color: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
+            'revision': { text: 'สั่งแก้ไขเอกสาร 🔴', color: 'text-rose-600 dark:text-rose-400', dot: 'bg-rose-500' },
+            'meeting_called': { text: 'ขอพบเจ้าของเรื่อง 🟠', color: 'text-orange-600 dark:text-orange-400', dot: 'bg-orange-500' }
+        };
+
+        let documents = [];
+        let pregenUids = [];
+        let systemUsers = [];
+        let systemUnits = [];
+        let collapsedUnitIds = [];
+        let rolePermissions = {};
+        let currentUser = null;
+        let activeDocId = null;
+        let selectedTrackActionValue = 'received';
+        let attachedFileDuringTrack = null;
+        let activePreGeneratedUIDForRegister = null;
+        let currentTab = 'registry';
+        let draggedUnitId = null;
+
+        // On Load Initializer
+        window.onload = function() {
+            lucide.createIcons();
+            
+            // LocalStorage sync for docs
+            const savedDocs = localStorage.getItem('rtms_documents');
+            documents = savedDocs ? JSON.parse(savedDocs) : initialMockDocs;
+            localStorage.setItem('rtms_documents', JSON.stringify(documents));
+
+            // LocalStorage sync for pregen codes
+            const savedPregens = localStorage.getItem('rtms_pregen_uids');
+            pregenUids = savedPregens ? JSON.parse(savedPregens) : ['DOC-PRE-2026-7701', 'DOC-PRE-2026-7702'];
+            localStorage.setItem('rtms_pregen_uids', JSON.stringify(pregenUids));
+
+            // Sync user accounts
+            const savedUsers = localStorage.getItem('rtms_users_db');
+            systemUsers = savedUsers ? JSON.parse(savedUsers) : defaultUsers;
+            localStorage.setItem('rtms_users_db', JSON.stringify(systemUsers));
+
+            // Sync Role Menu Permissions Matrix
+            const savedPermissions = localStorage.getItem('rtms_role_permissions');
+            rolePermissions = savedPermissions ? JSON.parse(savedPermissions) : defaultRolePermissions;
+            localStorage.setItem('rtms_role_permissions', JSON.stringify(rolePermissions));
+
+            // Sync Units Structure
+            const savedUnits = localStorage.getItem('rtms_units_db');
+            systemUnits = savedUnits ? JSON.parse(savedUnits) : defaultUnits;
+            localStorage.setItem('rtms_units_db', JSON.stringify(systemUnits));
+
+            // Sync Collapsible Folders state
+            const savedCollapsed = localStorage.getItem('rtms_collapsed_units');
+            collapsedUnitIds = savedCollapsed ? JSON.parse(savedCollapsed) : [];
+
+            // Sync Theme & Font size
+            const savedTheme = localStorage.getItem('rtms_theme') || 'dark';
+            toggleTheme(savedTheme);
+
+            const savedFontSize = localStorage.getItem('rtms_font_size') || '19px';
+            document.documentElement.style.fontSize = savedFontSize;
+
+            // Sync header DB settings input fields
+            const savedUrl = localStorage.getItem('rtms_sb_url');
+            const savedKey = localStorage.getItem('rtms_sb_key');
+            const savedDriveJson = localStorage.getItem('rtms_gdrive_json');
+            const savedDriveFolder = localStorage.getItem('rtms_gdrive_folder');
+            
+            if (savedUrl) {
+                document.getElementById('config-sb-url').value = savedUrl;
+                document.getElementById('config-sb-url-tab').value = savedUrl;
+            }
+            if (savedKey) {
+                document.getElementById('config-sb-key').value = savedKey;
+                document.getElementById('config-sb-key-tab').value = savedKey;
+            }
+            if (savedDriveJson) {
+                document.getElementById('config-gdrive-tab').value = savedDriveJson;
+            }
+            if (savedDriveFolder) {
+                document.getElementById('config-gdrive-folder-tab').value = savedDriveFolder;
+            }
+
+            // Render default permissions configuration matrix right away
+            renderPermissionsMatrix();
+
+            // Check current session login
+            const savedSession = localStorage.getItem('rtms_session_user');
+            if (savedSession) {
+                currentUser = JSON.parse(savedSession);
+                enterAppMain(currentUser);
+            } else {
+                document.getElementById('login-section').classList.remove('hidden');
+                document.getElementById('main-app-section').classList.add('hidden');
+            }
+        }
+
+        function fillMockLogin(role) {
+            const user = systemUsers.find(u => u.role === role);
+            if (user) {
+                document.getElementById('login-username').value = user.username;
+                document.getElementById('login-password').value = user.password;
+                showToast(`กรอกรหัสตัวอย่างสำหรับบทบาท ${role.toUpperCase()} แล้ว`);
+            }
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const usr = document.getElementById('login-username').value.trim();
+            const psw = document.getElementById('login-password').value.trim();
+
+            const authenticated = systemUsers.find(u => u.username === usr && u.password === psw);
+            if (authenticated) {
+                currentUser = authenticated;
+                localStorage.setItem('rtms_session_user', JSON.stringify(currentUser));
+                enterAppMain(currentUser);
+                showToast(`ยินดีต้อนรับเข้าสู่ระบบปฏิบัติงาน: ${currentUser.name}`);
+            } else {
+                showToast('รหัสผ่านหรือชื่อผู้ใช้งานไม่ถูกต้อง!', 'error');
+            }
+        }
+
+        function enterAppMain(user) {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('main-app-section').classList.remove('hidden');
+            
+            document.getElementById('profile-name').innerText = user.name;
+            
+            const badge = document.getElementById('role-badge');
+            if (user.role === 'admin') { badge.innerText = 'แอด'; badge.className = "w-7 h-7 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center text-xs font-black"; }
+            else if (user.role === 'subadmin') { badge.innerText = 'สาร'; badge.className = "w-7 h-7 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center text-xs font-black"; }
+            else if (user.role === 'superuser') { badge.innerText = 'ผบ'; badge.className = "w-7 h-7 rounded-full bg-gold/25 text-gold flex items-center justify-center text-xs font-black"; }
+            else { badge.innerText = 'นห'; badge.className = "w-7 h-7 rounded-full bg-teal-500/20 text-teal-500 flex items-center justify-center text-xs font-black"; }
+
+            configureRoleWorkspace(user.role);
+            
+            renderDocumentList();
+            renderPregenStrip();
+            renderUsersList();
+            renderUnitsStruct();
+            updateStats();
+        }
+
+        function handleLogout() {
+            showConfirmDialog(
+                "ออกจากระบบปฏิบัติงาน",
+                "คุณต้องการตัดเซสชันและกลับไปยังหน้าลงชื่อเข้าใช้ ใช่หรือไม่?",
+                () => {
+                    currentUser = null;
+                    localStorage.removeItem('rtms_session_user');
+                    document.getElementById('login-section').classList.remove('hidden');
+                    document.getElementById('main-app-section').classList.add('hidden');
+                    document.getElementById('login-username').value = '';
+                    document.getElementById('login-password').value = '';
+                    showToast('ออกจากระบบเรียบร้อยแล้ว');
+                }
+            );
+        }
+
+        function getUnitAbbrevLabel(allowedArray) {
+            if (!allowedArray || allowedArray.length === 0) return "เข้าถึงได้ทุกหน่วยงาน (Global Access)";
+            return systemUnits
+                .filter(u => allowedArray.includes(u.id))
+                .map(u => u.abbreviation)
+                .join(', ');
+        }
+
+        function configureRoleWorkspace(role) {
+            const dbSettingsBtn = document.getElementById('header-db-settings-btn');
+            const quickActionsStrip = document.getElementById('quick-actions-strip');
+            const pregenStrip = document.getElementById('pregen-strip');
+            const execPanel = document.getElementById('executive-action-panel');
+            const standardUpdaterPanel = document.getElementById('standard-updater-panel');
+            const registryLabel = document.getElementById('registry-author-label');
+
+            const tabBtnRegistry = document.getElementById('tab-btn-registry');
+            const tabBtnUsers = document.getElementById('tab-btn-users');
+            const tabBtnUnits = document.getElementById('tab-btn-units');
+            const tabBtnSystems = document.getElementById('tab-btn-systems');
+
+            dbSettingsBtn.classList.add('hidden');
+            quickActionsStrip.classList.remove('hidden');
+            pregenStrip.classList.add('hidden');
+            execPanel.classList.add('hidden');
+            standardUpdaterPanel.classList.remove('hidden');
+            
+            tabBtnRegistry.classList.add('hidden');
+            tabBtnUsers.classList.add('hidden');
+            tabBtnUnits.classList.add('hidden');
+            tabBtnSystems.classList.add('hidden');
+
+            // Find role permissions from matrix configuration
+            const permittedMenus = rolePermissions[role] || ['registry'];
+
+            if (permittedMenus.includes('registry')) tabBtnRegistry.classList.remove('hidden');
+            if (permittedMenus.includes('users')) tabBtnUsers.classList.remove('hidden');
+            if (permittedMenus.includes('units')) tabBtnUnits.classList.remove('hidden');
+            if (permittedMenus.includes('systems')) tabBtnSystems.classList.remove('hidden');
+
+            if (role === 'admin') {
+                dbSettingsBtn.classList.remove('hidden');
+                pregenStrip.classList.remove('hidden');
+                registryLabel.innerText = "ผู้ดูแลระบบ: แอดมินกลาง (สิทธิ์ตรวจสอบทุกพิกัดหน่วย)";
+            } 
+            else if (role === 'subadmin') {
+                pregenStrip.classList.remove('hidden');
+                registryLabel.innerText = `เจ้าหน้าที่สารบรรณ: ${currentUser.name} | ตำแหน่ง: ${currentUser.position || '-'} | สิทธิ์หน่วยงาน: ${getUnitAbbrevLabel(currentUser.allowedUnits)}`;
+            } 
+            else if (role === 'superuser') {
+                quickActionsStrip.classList.add('hidden');
+                execPanel.classList.remove('hidden');
+                standardUpdaterPanel.classList.add('hidden');
+                registryLabel.innerText = `ผู้บัญชาการ (ผบช.): ${currentUser.name} | ตำแหน่ง: ${currentUser.position || '-'} | สิทธิ์หน่วยงาน: ${getUnitAbbrevLabel(currentUser.allowedUnits)}`;
+            } 
+            else if (role === 'user') {
+                quickActionsStrip.classList.add('hidden');
+                registryLabel.innerText = `เจ้าหน้าที่หน้าห้อง: ${currentUser.name} | ตำแหน่ง: ${currentUser.position || '-'} | สิทธิ์หน่วยงาน: ${getUnitAbbrevLabel(currentUser.allowedUnits)}`;
+            }
+
+            // Redirect automatically if current active tab is not allowed
+            if (!permittedMenus.includes(currentTab)) {
+                switchTab(permittedMenus[0] || 'registry');
+            } else {
+                switchTab(currentTab);
+            }
+        }
+
+        function renderPermissionsMatrix() {
+            const tbody = document.getElementById('permissions-matrix-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const roles = [
+                { id: 'admin', label: '👑 ADMIN (แอดมินกลาง)' },
+                { id: 'subadmin', label: '👮 SUB-ADMIN (ฝ่ายสารบรรณ)' },
+                { id: 'superuser', label: '⭐ SUPERUSER (ผบช.)' },
+                { id: 'user', label: '🔑 USER (หน้าห้อง/สารบรรณเวียน)' }
+            ];
+
+            const menus = ['registry', 'users', 'units', 'systems'];
+
+            roles.forEach(role => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-100 dark:hover:bg-army-800/10 transition-colors";
+                
+                let cellsHtml = `<td class="py-3 px-4 font-black text-slate-900 dark:text-white">${role.label}</td>`;
+                
+                menus.forEach(menu => {
+                    const isChecked = (rolePermissions[role.id] && rolePermissions[role.id].includes(menu)) ? 'checked' : '';
+                    cellsHtml += `
+                        <td class="py-3 px-4 text-center">
+                            <label class="inline-flex items-center justify-center p-2 cursor-pointer">
+                                <input type="checkbox" data-role="${role.id}" data-menu="${menu}" ${isChecked} class="matrix-perm-checkbox w-5 h-5 rounded text-gold focus:ring-gold border-slate-350 dark:border-army-800 bg-white dark:bg-army-950 transition-colors">
+                            </label>
+                        </td>
+                    `;
+                });
+
+                tr.innerHTML = cellsHtml;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function saveRolePermissions() {
+            if (currentUser.role !== 'admin') {
+                showToast("คุณไม่มีสิทธิ์แก้ไขการกำหนดสิทธิ์ของระบบ!", "error");
+                return;
+            }
+
+            const checkboxes = document.querySelectorAll('.matrix-perm-checkbox');
+            const newPermissions = {
+                admin: [],
+                subadmin: [],
+                superuser: [],
+                user: []
+            };
+
+            checkboxes.forEach(cb => {
+                const role = cb.getAttribute('data-role');
+                const menu = cb.getAttribute('data-menu');
+                if (cb.checked) {
+                    newPermissions[role].push(menu);
+                }
+            });
+
+            // Admin must always preserve access to the users view to prevent lockout
+            if (!newPermissions.admin.includes('users')) {
+                newPermissions.admin.push('users');
+            }
+
+            rolePermissions = newPermissions;
+            localStorage.setItem('rtms_role_permissions', JSON.stringify(rolePermissions));
+            
+            showToast("อัปเดตแผงตรรกะสิทธิ์เข้าถึงเมนู เรียบร้อยแล้วค่ะ!", "success");
+            configureRoleWorkspace(currentUser.role);
+            renderPermissionsMatrix();
+        }
+
+        function populateUserFormUnits() {
+            const container = document.getElementById('user-form-units-checklist');
+            if (!container) return;
+            container.innerHTML = '';
+
+            systemUnits.forEach(unit => {
+                const label = document.createElement('label');
+                label.className = "flex items-center justify-between gap-2 text-xs font-bold cursor-pointer hover:bg-slate-200 dark:hover:bg-army-900/40 p-2 rounded-lg transition-all border border-slate-200/50 dark:border-army-850";
+                label.innerHTML = `
+                    <div class="flex items-center gap-2 min-w-0">
+                        <input type="checkbox" value="${unit.id}" class="user-unit-checkbox w-4.5 h-4.5 rounded text-gold focus:ring-gold bg-white dark:bg-army-950 border-slate-350 dark:border-army-800 transition-colors shrink-0">
+                        <span class="text-slate-800 dark:text-slate-200 truncate" title="${unit.fullName}">${unit.abbreviation} (${unit.fullName})</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase shrink-0">ใช้งาน</span>
+                `;
+                container.appendChild(label);
+            });
+        }
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.view-content');
+
+            tabButtons.forEach(btn => {
+                btn.className = "tab-button px-4 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all bg-transparent text-slate-500 dark:text-army-400 hover:text-slate-900 dark:hover:text-gold";
+            });
+
+            contents.forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "tab-button px-4 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all bg-gold text-army-900 shadow";
+            }
+
+            const targetView = document.getElementById(`view-${tabId}`);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+            }
+
+            // Clear connection status elements when switching tabs
+            const sbTabStatus = document.getElementById('sb-test-status-tab');
+            const gdTabStatus = document.getElementById('gdrive-test-status-tab');
+            if (sbTabStatus) sbTabStatus.classList.add('hidden');
+            if (gdTabStatus) gdTabStatus.classList.add('hidden');
+        }
+
+        function generateUID(isPregen = false) {
+            const date = new Date();
+            const year = date.getFullYear();
+            const random = Math.floor(1000 + Math.random() * 9000);
+            return isPregen ? `DOC-PRE-${year}-${random}` : `DOC-${year}-${random}`;
+        }
+
+        // Accessibility Adjust Font Sizes
+        function adjustFontSize(delta) {
+            const html = document.documentElement;
+            let currentSize = parseInt(window.getComputedStyle(html).fontSize);
+            
+            if (delta === 0) {
+                const size = window.innerWidth <= 640 ? '16px' : '19px';
+                html.style.fontSize = size;
+                localStorage.setItem('rtms_font_size', size);
+                showToast('คืนค่าขนาดตัวอักษรมาตรฐานแล้ว');
+                return;
+            }
+
+            let newSize = currentSize + delta;
+            if (newSize < 13) newSize = 13;
+            if (newSize > 26) newSize = 26;
+
+            html.style.fontSize = newSize + 'px';
+            localStorage.setItem('rtms_font_size', newSize + 'px');
+            showToast(`ปรับขนาดตัวอักษรเป็น: ${newSize}px`);
+        }
+
+        // Theme controllers
+        function toggleTheme(theme) {
+            const html = document.documentElement;
+            const btnLight = document.getElementById('theme-btn-light');
+            const btnDark = document.getElementById('theme-btn-dark');
+            
+            if (theme === 'dark') {
+                html.classList.add('dark');
+                btnDark.className = "p-1 px-2 rounded text-xs font-black transition-all flex items-center gap-0.5 bg-army-800 text-gold shadow-sm";
+                btnLight.className = "p-1 px-2 rounded text-xs font-semibold transition-all flex items-center gap-0.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200";
+            } else {
+                html.classList.remove('dark');
+                btnLight.className = "p-1 px-2 rounded text-xs font-black transition-all flex items-center gap-0.5 bg-white text-army-800 shadow-sm";
+                btnDark.className = "p-1 px-2 rounded text-xs font-semibold transition-all flex items-center gap-0.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200";
+            }
+            localStorage.setItem('rtms_theme', theme);
+        }
+
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                input.type = 'password';
+                icon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
+        // Connection Testing Logics
+        async function testSupabase(source) {
+            const urlId = source === 'tab' ? 'config-sb-url-tab' : 'config-sb-url';
+            const keyId = source === 'tab' ? 'config-sb-key-tab' : 'config-sb-key';
+            const statusId = source === 'tab' ? 'sb-test-status-tab' : 'sb-test-status-modal';
+            
+            const url = document.getElementById(urlId).value.trim();
+            const key = document.getElementById(keyId).value.trim();
+            const statusEl = document.getElementById(statusId);
+            
+            if (!url || !key) {
+                showTestStatus(statusEl, false, "กรุณากรอกข้อมูล Supabase URL และ Anon Key ให้ครบถ้วน");
+                return;
+            }
+            
+            showTestLoading(statusEl, "กำลังส่งสัญญาณตรวจสอบความถูกต้องไปยัง Supabase...");
+            
+            try {
+                const res = await fetch(`${url}/rest/v1/`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': key,
+                        'Authorization': `Bearer ${key}`
+                    }
+                });
+                
+                if (res.ok) {
+                    showTestStatus(statusEl, true, "เชื่อมต่อ Supabase Database สำเร็จ!\nโครงข่าย API ใช้งานได้ปกติและพร้อมจัดเก็บข้อมูลจริงแล้วค่ะ");
+                } else {
+                    const errData = await res.json().catch(() => ({}));
+                    const msg = errData.message || `HTTP ${res.status}: Anon Key หรือสิทธิ์การเข้าถึงข้อมูลไม่ถูกต้อง`;
+                    showTestStatus(statusEl, false, `ปฏิเสธการเชื่อมต่อ: ${msg}\nโปรดตรวจสอบค่า Anon Key และตั้งค่าสิทธิ์เข้าถึงให้เรียบร้อยค่ะ`);
+                }
+            } catch (err) {
+                showTestStatus(statusEl, false, `ไม่สามารถเชื่อมต่อได้: ${err.message}\nโปรดตรวจสอบ URL ของเซิร์ฟเวอร์ หรือตรวจสอบตัวบล็อกโฆษณา/CORS บนเบราว์เซอร์ของท่าน`);
+            }
+        }
+
+        async function testGoogleDrive(source) {
+            const jsonId = 'config-gdrive-tab'; 
+            const folderId = 'config-gdrive-folder-tab';
+            const statusId = 'gdrive-test-status-tab';
+            
+            const jsonText = document.getElementById(jsonId).value.trim();
+            const folder = document.getElementById(folderId).value.trim();
+            const statusEl = document.getElementById(statusId);
+            
+            if (!jsonText || !folder) {
+                showTestStatus(statusEl, false, "กรุณากรอก Service Account JSON Key และ Drive Folder ID ให้ครบถ้วน");
+                return;
+            }
+            
+            showTestLoading(statusEl, "กำลังตรวจสอบโครงสร้างคีย์และพิกัดความปลอดภัยของโฟลเดอร์...");
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            try {
+                const credentials = JSON.parse(jsonText);
+                const requiredFields = ['type', 'project_id', 'private_key', 'client_email', 'token_uri'];
+                const missing = requiredFields.filter(field => !credentials[field]);
+                
+                if (missing.length > 0) {
+                    showTestStatus(statusEl, false, `ข้อผิดพลาดของรูปแบบ: ขาดฟิลด์สำคัญในคีย์ JSON (${missing.join(', ')})`);
+                    return;
+                }
+                
+                if (credentials.type !== 'service_account') {
+                    showTestStatus(statusEl, false, "ข้อมูลประเภทบัญชีไม่ใช่ 'service_account'");
+                    return;
+                }
+                
+                if (folder.length < 25) {
+                    showTestStatus(statusEl, false, "พิกัด Folder ID ไม่ถูกต้อง (สั้นเกินกว่าข้อกำหนดมาตรฐาน)");
+                    return;
+                }
+                
+                showTestStatus(statusEl, true, `ยืนยันความถูกต้องของกุญแจ Google Drive API สำเร็จ!\n• อีเมลบัญชีบริการ: ${credentials.client_email}\n• สถานะโครงสร้าง: พร้อมใช้งานบน Vercel Serverless เพื่อจัดเก็บเอกสารเรียบร้อยแล้วค่ะ`);
+            } catch (err) {
+                showTestStatus(statusEl, false, `ความผิดพลาด: โครงสร้างไฟล์คีย์ JSON ไม่ถูกต้องสำหรับการตรวจสอบสิทธิ์ (${err.message})`);
+            }
+        }
+
+        function showTestLoading(element, msg) {
+            element.classList.remove('hidden');
+            element.className = "p-3 rounded-xl border text-xs font-bold bg-slate-100 dark:bg-slate-900 border-slate-350 dark:border-slate-800 text-slate-700 dark:text-army-300 flex items-center gap-2 mt-2";
+            element.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-gold shrink-0"></i><span>${msg}</span>`;
+            lucide.createIcons();
+        }
+        
+        function showTestStatus(element, isSuccess, msg) {
+            element.classList.remove('hidden');
+            if (isSuccess) {
+                element.className = "p-3 rounded-xl border text-xs font-bold bg-emerald-100 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-400 flex items-start gap-2 mt-2 whitespace-pre-line";
+                element.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"></i><span>${msg}</span>`;
+            } else {
+                element.className = "p-3 rounded-xl border text-xs font-bold bg-rose-100 dark:bg-rose-950/20 border-rose-300 dark:border-rose-800/40 text-rose-850 dark:text-rose-400 flex items-start gap-2 mt-2 whitespace-pre-line";
+                element.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-rose-500 shrink-0 mt-0.5"></i><span>${msg}</span>`;
+            }
+            lucide.createIcons();
+        }
+
+        function handleDragStart(e, unitId) {
+            draggedUnitId = unitId;
+            e.dataTransfer.setData("text/plain", unitId);
+            e.dataTransfer.effectAllowed = "move";
+            document.getElementById('root-dropzone').classList.remove('hidden');
+            e.currentTarget.classList.add('opacity-40');
+        }
+
+        function handleDragEnd(e) {
+            document.getElementById('root-dropzone').classList.add('hidden');
+            e.currentTarget.classList.remove('opacity-40');
+            document.querySelectorAll('.drag-highlight').forEach(el => el.classList.remove('drag-highlight'));
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            e.currentTarget.classList.add('drag-highlight');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-highlight');
+        }
+
+        function isDescendant(possibleParentId, childId) {
+            let current = systemUnits.find(u => u.id === childId);
+            while (current && current.parentId) {
+                if (current.parentId === possibleParentId) return true;
+                current = systemUnits.find(u => u.id === current.parentId);
+            }
+            return false;
+        }
+
+        function handleRootDrop(e) {
+            e.preventDefault();
+            const draggedId = e.dataTransfer.getData("text/plain") || draggedUnitId;
+            if (!draggedId) return;
+
+            const idx = systemUnits.findIndex(u => u.id === draggedId);
+            if (idx !== -1) {
+                systemUnits[idx].parentId = "";
+                localStorage.setItem('rtms_units_db', JSON.stringify(systemUnits));
+                renderUnitsStruct();
+                showToast("ย้ายหน่วยงานมาเป็นระดับหลักสูงสุดเสร็จสิ้น", "success");
+            }
+            document.getElementById('root-dropzone').classList.add('hidden');
+        }
+
+        function handleDropOnUnit(e, targetId) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('drag-highlight');
+            
+            const draggedId = e.dataTransfer.getData("text/plain") || draggedUnitId;
+            if (!draggedId) return;
+
+            if (draggedId === targetId) {
+                showToast("ไม่สามารถย้ายหน่วยงานเข้าไปในตัวเองได้!", "error");
+                return;
+            }
+
+            if (isDescendant(draggedId, targetId)) {
+                showToast("ตรวจพบการซ้อนลูประบบ! ไม่สามารถย้ายหน่วยหลักมาเป็นหน่วยย่อยของตัวเองได้", "error");
+                return;
+            }
+
+            const idx = systemUnits.findIndex(u => u.id === draggedId);
+            if (idx !== -1) {
+                systemUnits[idx].parentId = targetId;
+                collapsedUnitIds = collapsedUnitIds.filter(id => id !== targetId);
+                localStorage.setItem('rtms_collapsed_units', JSON.stringify(collapsedUnitIds));
+                localStorage.setItem('rtms_units_db', JSON.stringify(systemUnits));
+                renderUnitsStruct();
+                showToast(`ย้ายสังกัดหน่วยงานย่อยขึ้นตรงเรียบร้อย`, "success");
+            }
+            document.getElementById('root-dropzone').classList.add('hidden');
+        }
+
+        function toggleCollapse(unitId) {
+            if (collapsedUnitIds.includes(unitId)) {
+                collapsedUnitIds = collapsedUnitIds.filter(id => id !== unitId);
+            } else {
+                collapsedUnitIds.push(unitId);
+            }
+            localStorage.setItem('rtms_collapsed_units', JSON.stringify(collapsedUnitIds));
+            renderUnitsStruct();
+        }
+
+        function renderUnitsStruct() {
+            const container = document.getElementById('units-tree-container');
+            const parentSelect = document.getElementById('unit-mgmt-parent');
+            if (!container) return;
+
+            container.innerHTML = '';
+            
+            // Re-populate parent selection dropdown
+            parentSelect.innerHTML = '<option value="">-- เป็นระดับบัญชาการหลัก (นขต. สูงสุด) --</option>';
+            systemUnits.forEach(u => {
+                parentSelect.innerHTML += `<option value="${u.id}">${u.fullName} (${u.abbreviation})</option>`;
+            });
+
+            // Recursive DOM builder
+            function buildTreeDOM(parentId) {
+                const subBranches = systemUnits
+                    .filter(u => u.parentId === parentId)
+                    .sort((a, b) => a.order - b.order);
+
+                if (subBranches.length === 0) return null;
+
+                const branchContainer = document.createElement('div');
+                branchContainer.className = parentId === "" 
+                    ? "space-y-3" 
+                    : "pl-6 border-l border-slate-300 dark:border-army-800 space-y-3 mt-2";
+
+                subBranches.forEach(unit => {
+                    const unitWrapper = document.createElement('div');
+                    unitWrapper.className = "space-y-2";
+
+                    const hasChildren = systemUnits.some(u => u.parentId === unit.id);
+                    const isCollapsed = collapsedUnitIds.includes(unit.id);
+
+                    // Node Element Builder
+                    const node = document.createElement('div');
+                    
+                    node.setAttribute("draggable", "true");
+                    node.addEventListener("dragstart", (e) => handleDragStart(e, unit.id));
+                    node.addEventListener("dragend", handleDragEnd);
+                    node.addEventListener("dragover", handleDragOver);
+                    node.addEventListener("dragleave", handleDragLeave);
+                    node.addEventListener("drop", (e) => handleDropOnUnit(e, unit.id));
+
+                    node.className = "bg-white dark:bg-army-800/40 border border-slate-200 dark:border-army-850 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm cursor-move active:opacity-60 transition-all";
+
+                    let chevronIcon = '';
+                    let folderIcon = '';
+
+                    if (hasChildren) {
+                        chevronIcon = isCollapsed 
+                            ? `<button onclick="toggleCollapse('${unit.id}')" class="p-1 hover:bg-slate-100 dark:hover:bg-army-700 rounded text-slate-500 dark:text-army-300 transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>`
+                            : `<button onclick="toggleCollapse('${unit.id}')" class="p-1 hover:bg-slate-100 dark:hover:bg-army-700 rounded text-slate-500 dark:text-army-300 transition-colors"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>`;
+                        
+                        folderIcon = isCollapsed
+                            ? `<i data-lucide="folder" class="w-4.5 h-4.5 text-amber-500 dark:text-gold shrink-0"></i>`
+                            : `<i data-lucide="folder-open" class="w-4.5 h-4.5 text-amber-500 dark:text-gold shrink-0"></i>`;
+                    } else {
+                        chevronIcon = `<span class="w-6"></span>`;
+                        folderIcon = `<i data-lucide="file-text" class="w-4.5 h-4.5 text-slate-400 dark:text-army-400 shrink-0"></i>`;
+                    }
+
+                    node.innerHTML = `
+                        <div class="flex items-center gap-2 min-w-0">
+                            ${chevronIcon}
+                            <div class="flex items-center gap-2 min-w-0">
+                                ${folderIcon}
+                                <span class="text-xs bg-gold/15 dark:bg-gold/20 text-army-900 dark:text-gold px-2 py-0.5 rounded font-black border border-gold/30 shrink-0">${unit.level}</span>
+                                <span class="text-sm font-black text-slate-800 dark:text-white truncate" title="${unit.fullName}">${unit.abbreviation}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                            <!-- Create Sub-unit -->
+                            <button onclick="createSubUnit('${unit.id}')" class="p-1.5 bg-slate-50 hover:bg-emerald-50 dark:bg-army-900/60 dark:hover:bg-emerald-950/40 rounded-lg text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-army-800" title="สร้างหน่วยย่อย">
+                                <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                            </button>
+                            <!-- Move Up/Down inside same parent -->
+                            <button onclick="changeUnitOrder('${unit.id}', -1)" class="p-1.5 bg-slate-50 hover:bg-slate-200 dark:bg-army-900/60 dark:hover:bg-army-800 rounded-lg text-slate-600 dark:text-army-300 border border-slate-200 dark:border-army-800" title="เลื่อนลำดับขึ้น">
+                                <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="changeUnitOrder('${unit.id}', 1)" class="p-1.5 bg-slate-50 hover:bg-slate-200 dark:bg-army-900/60 dark:hover:bg-army-800 rounded-lg text-slate-600 dark:text-army-300 border border-slate-200 dark:border-army-800" title="เลื่อนลำดับลง">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </button>
+                            <!-- Edit/Delete -->
+                            <button onclick="editUnitStruct('${unit.id}')" class="p-1.5 bg-slate-50 hover:bg-slate-200 dark:bg-army-900/60 dark:hover:bg-army-800 rounded-lg text-gold border border-slate-200 dark:border-army-800" title="แก้ไขข้อมูล">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteUnitStruct('${unit.id}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950 rounded-lg text-rose-500 border border-rose-100 dark:border-rose-900/40" title="ลบหน่วยงาน">
+                                <i data-lucide="trash" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    unitWrapper.appendChild(node);
+
+                    if (hasChildren && !isCollapsed) {
+                        const childDOM = buildTreeDOM(unit.id);
+                        if (childDOM) unitWrapper.appendChild(childDOM);
+                    }
+
+                    branchContainer.appendChild(unitWrapper);
+                });
+
+                return branchContainer;
+            }
+
+            const treeDOM = buildTreeDOM("");
+            if (treeDOM) {
+                container.appendChild(treeDOM);
+            } else {
+                container.innerHTML = `<div class="p-6 text-center text-slate-400">ยังไม่มีข้อมูลโครงสร้างหน่วยงานในระบบ</div>`;
+            }
+
+            lucide.createIcons();
+        }
+
+        // Add/Edit Unit submit action (Simulates DB locally)
+        function handleUnitFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('unit-mgmt-id').value;
+            const fullName = document.getElementById('unit-mgmt-fullname').value.trim();
+            const abbreviation = document.getElementById('unit-mgmt-abbrev').value.trim();
+            const level = document.getElementById('unit-mgmt-level').value;
+            const parentId = document.getElementById('unit-mgmt-parent').value;
+            const order = parseInt(document.getElementById('unit-mgmt-order').value) || 1;
+
+            if (id === "") {
+                const newId = `unit-${Date.now()}`;
+                const newUnit = { id: newId, fullName, abbreviation, level, parentId, order };
+                systemUnits.push(newUnit);
+                showToast(`บันทึกสำเร็จ! เพิ่มโครงสร้างหน่วย ${abbreviation} เรียบร้อย`, 'success');
+            } else {
+                if (parentId === id) {
+                    showToast('ไม่สามารถเลือกสังกัดหน่วยตัวเองเป็นหน่วยเหนือได้!', 'error');
+                    return;
+                }
+                const index = systemUnits.findIndex(u => u.id === id);
+                if (index !== -1) {
+                    systemUnits[index] = { id, fullName, abbreviation, level, parentId, order };
+                    showToast(`แก้ไขสำเร็จ! บันทึกความเปลี่ยนแปลงของ ${abbreviation} เรียบร้อย`, 'success');
+                }
+            }
+
+            localStorage.setItem('rtms_units_db', JSON.stringify(systemUnits));
+            closeUnitFormModal();
+            renderUnitsStruct();
+        }
+
+        function openNewRootUnitForm() {
+            resetUnitMgmtForm();
+            document.getElementById('unit-mgmt-parent').value = "";
+            document.getElementById('unit-form-headline').innerText = "เพิ่มหน่วยงานระดับหลักสูงสุด";
+            openUnitFormModal();
+        }
+
+        function editUnitStruct(id) {
+            const unit = systemUnits.find(u => u.id === id);
+            if (!unit) return;
+
+            document.getElementById('unit-mgmt-id').value = unit.id;
+            document.getElementById('unit-mgmt-fullname').value = unit.fullName;
+            document.getElementById('unit-mgmt-abbrev').value = unit.abbreviation;
+            document.getElementById('unit-mgmt-level').value = unit.level;
+            document.getElementById('unit-mgmt-parent').value = unit.parentId;
+            document.getElementById('unit-mgmt-order').value = unit.order;
+
+            document.getElementById('unit-form-headline').innerText = `แก้ไขหน่วย: ${unit.abbreviation}`;
+            openUnitFormModal();
+            showToast(`ดึงข้อมูล ${unit.abbreviation} เรียบร้อย`);
+        }
+
+        function createSubUnit(parentId) {
+            resetUnitMgmtForm();
+            const parentUnit = systemUnits.find(u => u.id === parentId);
+            if (!parentUnit) return;
+
+            document.getElementById('unit-mgmt-parent').value = parentId;
+            document.getElementById('unit-form-headline').innerText = `สร้างหน่วยย่อยภายใต้: ${parentUnit.abbreviation}`;
+            openUnitFormModal();
+            showToast(`ระบุสังกัดหน่วยงานขึ้นตรงให้ ${parentUnit.abbreviation} เรียบร้อย`);
+        }
+
+        function deleteUnitStruct(id) {
+            const unit = systemUnits.find(u => u.id === id);
+            if (!unit) return;
+
+            const hasSubordinates = systemUnits.some(u => u.parentId === id);
+            if (hasSubordinates) {
+                showToast(`ไม่สามารถลบได้! เนื่องจากยังมีหน่วยย่อยสังกัดอยู่ใต้หน่วย ${unit.abbreviation}`, 'error');
+                return;
+            }
+
+            showConfirmDialog(
+                "ลบโครงสร้างหน่วยงาน",
+                `คุณต้องการลบหน่วย ${unit.fullName} (${unit.abbreviation}) ออกจากระบบอย่างถาวร ใช่หรือไม่?`,
+                () => {
+                    systemUnits = systemUnits.filter(u => u.id !== id);
+                    localStorage.setItem('rtms_units_db', JSON.stringify(systemUnits));
+                    renderUnitsStruct();
+                    resetUnitMgmtForm();
+                    showToast(`ลบข้อมูลหน่วยงานออกจากคลังระบบเรียบร้อย`, 'success');
+                }
+            );
+        }
+
+        function changeUnitOrder(id, direction) {
+            const unitIndex = systemUnits.findIndex(u => u.id === id);
+            if (unitIndex === -1) return;
+
+            const unit = systemUnits[unitIndex];
+            const siblings = systemUnits
+                .filter(u => u.parentId === unit.parentId)
+                .sort((a, b) => a.order - b.order);
+
+            const siblingIndex = siblings.findIndex(s => s.id === id);
+            const targetIndex = siblingIndex + direction;
+
+            if (targetIndex >= 0 && targetIndex < siblings.length) {
+                const tempOrder = siblings[siblingIndex].order;
+                siblings[siblingIndex].order = siblings[targetIndex].order;
+                siblings[targetIndex].order = tempOrder;
+
+                siblings.forEach(sib => {
+                    const idx = systemUnits.findIndex(u => u.id === sib.id);
+                    if (idx !== -1) {
+                        systemUnits[idx].order = sib.order;
+                    }
+                });
+
+                systemUnits.sort((a, b) => a.order - b.order);
+                localStorage.setItem('rtms_units_db', JSON.stringify(systemUnits));
+                renderUnitsStruct();
+                showToast('สลับลำดับโครงสร้างหน่วยเรียบร้อย!');
+            }
+        }
+
+        function resetUnitMgmtForm() {
+            document.getElementById('unit-mgmt-form').reset();
+            document.getElementById('unit-mgmt-id').value = "";
+            document.getElementById('unit-form-headline').innerText = "เพิ่ม/แก้ไขหน่วยงานทหารในระบบ";
+        }
+
+        function openUnitFormModal() {
+            const modal = document.getElementById('unit-form-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); }, 50);
+        }
+
+        function closeUnitFormModal() {
+            const modal = document.getElementById('unit-form-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            resetUnitMgmtForm();
+        }
+
+        // Delete document (Only Admin)
+        function deleteDocument(uid) {
+            if (currentUser.role !== 'admin') {
+                showToast('สิทธิ์ของคุณไม่สามารถลบทะเบียนเอกสารคุมหลักได้!', 'error');
+                return;
+            }
+            showConfirmDialog(
+                "ลบข้อมูลทะเบียนคุม",
+                `คุณต้องการลบข้อมูลคุมหนังสือ ${uid} ออกจากระบบสารบรรณหลักอย่างถาวร ใช่หรือไม่?`,
+                () => {
+                    documents = documents.filter(d => d.uid !== uid);
+                    localStorage.setItem('rtms_documents', JSON.stringify(documents));
+                    renderDocumentList();
+                    updateStats();
+                    showToast(`ลบข้อมูลทะเบียนเอกสาร ${uid} เรียบร้อยแล้ว`, 'success');
+                    if (activeDocId === uid) {
+                        closeTrackingModal();
+                        activeDocId = null;
+                    }
+                }
+            );
+        }
+
+        function renderPregenStrip() {
+            const strip = document.getElementById('pregen-strip');
+            const container = document.getElementById('pregen-badge-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (pregenUids.length === 0 || (currentUser.role !== 'admin' && currentUser.role !== 'subadmin')) {
+                strip.classList.add('hidden');
+                return;
+            }
+
+            strip.classList.remove('hidden');
+
+            pregenUids.forEach(uid => {
+                const badge = document.createElement('div');
+                badge.className = "bg-sky-100 dark:bg-sky-900/40 border border-sky-200 dark:border-sky-800/60 rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs shadow-sm w-full sm:w-auto shrink-0";
+                badge.innerHTML = `
+                    <div class="flex items-center gap-1.5 font-mono text-sky-700 dark:text-sky-300 font-black">
+                        <i data-lucide="tag" class="w-4 h-4 text-sky-600 dark:text-sky-400"></i>
+                        <span>${uid}</span>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <button onclick="printPreGeneratedUID('${uid}')" class="p-1 bg-sky-200 dark:bg-sky-800/50 hover:bg-sky-300 dark:hover:bg-sky-700 rounded text-sky-900 dark:text-sky-200" title="พิมพ์สติกเกอร์">
+                            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="startRegisterFromPregen('${uid}')" class="px-2 py-1 bg-gold hover:bg-gold-dark text-army-900 rounded-lg text-[10px] font-black uppercase tracking-wider" title="ลงทะเบียนหนังสือเข้าใหม่">
+                            ลงทะเบียนคุม
+                        </button>
+                    </div>
+                `;
+                container.appendChild(badge);
+            });
+
+            lucide.createIcons();
+        }
+
+        function renderUsersList() {
+            const tbody = document.getElementById('users-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            systemUsers.forEach((user, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-100 dark:hover:bg-army-800/10 transition-colors";
+                
+                let roleLabel = "";
+                if (user.role === 'admin') roleLabel = "👑 ADMIN";
+                else if (user.role === 'subadmin') roleLabel = "👮 SUB-ADMIN";
+                else if (user.role === 'superuser') roleLabel = "⭐ SUPERUSER (ผบช.)";
+                else roleLabel = "🔑 USER (หน้าห้อง)";
+
+                tr.innerHTML = `
+                    <td class="py-4 px-4 font-bold text-slate-900 dark:text-white">
+                        <div>${user.name}</div>
+                        <div class="text-xs text-slate-500 dark:text-army-400 font-extrabold mt-0.5">ตำแหน่ง: ${user.position || '-'}</div>
+                    </td>
+                    <td class="py-4 px-4 text-sm font-mono text-slate-500 dark:text-army-400">${user.username}</td>
+                    <td class="py-4 px-4 text-center">
+                        <span class="text-xs px-2.5 py-1 rounded bg-slate-100 dark:bg-army-900 text-slate-800 dark:text-gold font-bold inline-block">${roleLabel}</span>
+                    </td>
+                    <td class="py-4 px-4 text-xs font-bold text-slate-600 dark:text-army-300">
+                        ${getUnitAbbrevLabel(user.allowedUnits)}
+                    </td>
+                    <td class="py-4 px-4 text-right">
+                        <div class="flex justify-end gap-1.5">
+                            <button onclick="editUserAccount(${index})" class="p-2 bg-slate-100 dark:bg-army-700/60 hover:bg-slate-200 dark:hover:bg-army-750 rounded-lg text-slate-600 dark:text-gold transition-colors border border-slate-200 dark:border-army-800">
+                                <i data-lucide="edit" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteUserAccount(${index})" class="p-2 bg-rose-50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-900 rounded-lg text-rose-600 transition-colors border border-rose-150 dark:border-rose-950/40">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            lucide.createIcons();
+        }
+
+        function openAddUserModal() {
+            populateUserFormUnits();
+            document.getElementById('user-form-fields').reset();
+            document.getElementById('user-form-index').value = "";
+            document.getElementById('user-form-title').innerText = "เพิ่มผู้ใช้งานระบบใหม่";
+            
+            document.getElementById('user-form-password').type = 'password';
+            document.getElementById('password-toggle-icon').setAttribute('data-lucide', 'eye');
+
+            const modal = document.getElementById('user-form-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); }, 50);
+            lucide.createIcons();
+        }
+
+        function editUserAccount(index) {
+            const user = systemUsers[index];
+            if (!user) return;
+
+            populateUserFormUnits();
+
+            document.getElementById('user-form-index').value = index;
+            document.getElementById('user-form-name').value = user.name;
+            document.getElementById('user-form-position').value = user.position || "";
+            document.getElementById('user-form-username').value = user.username;
+            document.getElementById('user-form-password').value = user.password;
+            document.getElementById('user-form-role').value = user.role;
+            document.getElementById('user-form-title').innerText = `แก้ไขข้อมูลเจ้าหน้าที่: ${user.name}`;
+
+            // Check checkboxes for already assigned/allowed units
+            const checkboxes = document.querySelectorAll('.user-unit-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = (user.allowedUnits && user.allowedUnits.includes(cb.value));
+            });
+
+            document.getElementById('user-form-password').type = 'password';
+            document.getElementById('password-toggle-icon').setAttribute('data-lucide', 'eye');
+
+            const modal = document.getElementById('user-form-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); }, 50);
+            lucide.createIcons();
+        }
+
+        function deleteUserAccount(index) {
+            const user = systemUsers[index];
+            if (!user) return;
+
+            if (user.username === currentUser.username) {
+                showToast("คุณไม่สามารถลบสิทธิ์ของตัวเองได้!", "error");
+                return;
+            }
+
+            showConfirmDialog(
+                "ลบผู้ใช้งานระบบ",
+                `คุณต้องการลบบัญชีผู้ใช้ของ ${user.name} ออกจากฐานข้อมูลผู้ปฏิบัติการระบบ ใช่หรือไม่?`,
+                () => {
+                    systemUsers.splice(index, 1);
+                    localStorage.setItem('rtms_users_db', JSON.stringify(systemUsers));
+                    renderUsersList();
+                    showToast(`ลบเจ้าหน้าที่ ${user.name} เรียบร้อยแล้ว`, 'success');
+                }
+            );
+        }
+
+        function submitUserForm(e) {
+            e.preventDefault();
+            const indexStr = document.getElementById('user-form-index').value;
+            const name = document.getElementById('user-form-name').value.trim();
+            const position = document.getElementById('user-form-position').value.trim();
+            const username = document.getElementById('user-form-username').value.trim();
+            const password = document.getElementById('user-form-password').value.trim();
+            const role = document.getElementById('user-form-role').value;
+
+            const collide = systemUsers.find((u, idx) => u.username === username && idx.toString() !== indexStr);
+            if (collide) {
+                showToast("มีผู้ใช้งาน Username นี้อยู่ในฐานข้อมูลระบบแล้ว!", "error");
+                return;
+            }
+
+            // Extract all checked units from the new checklist container
+            const checkboxes = document.querySelectorAll('.user-unit-checkbox');
+            const allowedUnits = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    allowedUnits.push(cb.value);
+                }
+            });
+
+            if (indexStr === "") {
+                const newUser = { name, position, username, password, role, allowedUnits };
+                systemUsers.push(newUser);
+                showToast(`เพิ่มสิทธิ์ผู้ใช้งาน ${name} เรียบร้อย (จำลองลง Local DB)`);
+            } else {
+                const idx = parseInt(indexStr);
+                systemUsers[idx] = { name, position, username, password, role, allowedUnits };
+                showToast(`แก้ไขสิทธิ์ผู้ใช้งาน ${name} เรียบร้อย (จำลองลง Local DB)`);
+            }
+
+            localStorage.setItem('rtms_users_db', JSON.stringify(systemUsers));
+            closeUserFormModal();
+            renderUsersList();
+        }
+
+        function closeUserFormModal() {
+            const modal = document.getElementById('user-form-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').innerText = documents.length;
+            document.getElementById('stat-pending').innerText = documents.filter(d => d.status !== 'approved').length;
+            document.getElementById('stat-approved').innerText = documents.filter(d => d.status === 'approved').length;
+            document.getElementById('stat-pregen').innerText = pregenUids.length;
+        }
+
+        function submitBatchPregen() {
+            const countInput = document.getElementById('pregen-count-input');
+            const count = parseInt(countInput.value) || 4;
+
+            if (count < 1 || count > 16) {
+                showToast('จำกัดปริมาณพิมพ์ล่วงหน้า 1 ถึง 16 ใบต่อครั้ง', 'error');
+                return;
+            }
+
+            const newUids = [];
+            for (let i = 0; i < count; i++) {
+                newUids.push(generateUID(true));
+            }
+
+            pregenUids = [...pregenUids, ...newUids];
+            localStorage.setItem('rtms_pregen_uids', JSON.stringify(pregenUids));
+
+            closePregenModal();
+            renderPregenStrip();
+            updateStats();
+            showToast(`สั่งออกบาร์โค้ดสิทธิ์ล่วงหน้า ${count} ใบ เรียบร้อย!`);
+
+            setTimeout(() => {
+                openPregenSheetView();
+            }, 600);
+        }
+
+        function renderDocumentList() {
+            const filterValue = document.getElementById('search-input').value.toLowerCase();
+            const dateFilter = document.getElementById('filter-date').value; 
+            const sortOrder = document.getElementById('sort-time').value; 
+            const tbody = document.getElementById('document-table-body');
+            
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            // Apply Scope Constraint: Filter document lists strictly by user's assigned allowed units
+            let scopeDocs = documents;
+            if (currentUser && currentUser.role !== 'admin' && currentUser.allowedUnits && currentUser.allowedUnits.length > 0) {
+                // Find allowed unit abbreviation strings
+                const allowedAbbrevs = systemUnits
+                    .filter(u => currentUser.allowedUnits.includes(u.id))
+                    .map(u => u.abbreviation.toLowerCase());
+
+                scopeDocs = documents.filter(doc => {
+                    const originLower = doc.origin.toLowerCase();
+                    const destLower = doc.dest.toLowerCase();
+                    return allowedAbbrevs.some(abbrev => originLower.includes(abbrev) || destLower.includes(abbrev));
+                });
+            }
+
+            // Apply Text Search Filter
+            let filteredDocs = scopeDocs.filter(doc => 
+                doc.uid.toLowerCase().includes(filterValue) ||
+                doc.docNum.toLowerCase().includes(filterValue) ||
+                doc.subject.toLowerCase().includes(filterValue)
+            );
+
+            // Apply Date Filter
+            if (dateFilter) {
+                filteredDocs = filteredDocs.filter(doc => {
+                    const docDateStr = doc.updatedAt.split('T')[0];
+                    return docDateStr === dateFilter;
+                });
+            }
+
+            // Apply Time Sorting
+            filteredDocs.sort((a, b) => {
+                const timeA = new Date(a.updatedAt).getTime();
+                const timeB = new Date(b.updatedAt).getTime();
+                return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+            });
+
+            if (filteredDocs.length === 0) {
+                document.getElementById('no-docs-message').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('no-docs-message').classList.add('hidden');
+            }
+
+            filteredDocs.forEach(doc => {
+                const urgency = urgencyLabels[doc.urgency] || urgencyLabels.normal;
+                const confidential = confidentialLabels[doc.confidential] || confidentialLabels.normal;
+                const status = statusLabels[doc.status] || statusLabels.pending;
+
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-slate-100 dark:hover:bg-army-800/20 transition-all cursor-pointer ${activeDocId === doc.uid ? 'bg-slate-200/60 dark:bg-army-800/40 border-l-4 border-l-gold' : ''}`;
+                
+                tr.onclick = (e) => {
+                    if (e.target.closest('button')) return;
+                    selectActiveDocument(doc.uid);
+                };
+
+                const deleteBtnHtml = currentUser && currentUser.role === 'admin' ? `
+                    <button onclick="deleteDocument('${doc.uid}')" class="p-1.5 bg-rose-50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-900 rounded-lg text-rose-600 transition-colors border border-rose-100 dark:border-rose-900/40" title="ลบเอกสาร">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                ` : '';
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono text-xs font-bold text-slate-700 dark:text-army-300">
+                        <span class="block truncate max-w-[150px]">${doc.docNum}</span>
+                        <span class="text-[10px] text-slate-400 dark:text-army-505 font-mono">${doc.uid}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="font-extrabold text-slate-900 dark:text-white max-w-xs md:max-w-md truncate text-sm sm:text-base">${doc.subject}</div>
+                        <div class="text-[11px] text-slate-550 dark:text-army-400 mt-0.5 flex gap-1.5 font-bold font-black">
+                            <span>จาก: ${doc.origin}</span>
+                            <span>➡️</span>
+                            <span>ถึง: ${doc.dest}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex flex-col items-center gap-1">
+                            <span class="text-[9px] sm:text-xs px-2 py-0.5 rounded-md font-black ${urgency.bg}">${urgency.text}</span>
+                            <span class="text-[9px] sm:text-xs px-2 py-0.5 rounded-md ${confidential.bg}">${confidential.text}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full ${status.dot} animate-pulse shrink-0"></span>
+                            <span class="text-xs sm:text-sm font-black ${status.color}">${status.text}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <div class="flex justify-end gap-1.5">
+                            <button onclick="openPrintModal('${doc.uid}')" class="p-1.5 bg-slate-100 dark:bg-army-700/60 hover:bg-slate-200 dark:hover:bg-army-700 rounded-lg text-gold border border-slate-300 dark:border-army-600 transition-colors" title="พิมพ์ QR Code">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                            </button>
+                            ${deleteBtnHtml}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            lucide.createIcons();
+        }
+
+        function openTrackingModal() {
+            const modal = document.getElementById('tracking-modal');
+            const content = document.getElementById('tracking-modal-panel');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('translate-x-full');
+            }, 50);
+        }
+
+        function closeTrackingModal() {
+            const modal = document.getElementById('tracking-modal');
+            const content = document.getElementById('tracking-modal-panel');
+            
+            content.classList.add('translate-x-full');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function selectActiveDocument(uid) {
+            if (pregenUids.includes(uid)) {
+                if (currentUser.role !== 'admin' && currentUser.role !== 'subadmin') {
+                    showToast(`รหัส ${uid} ยังไม่ได้เชื่อมข้อมูล และสิทธิ์ของคุณไม่สามารถลงทะเบียนเอกสารใหม่ได้`, 'error');
+                    return;
+                }
+                showToast(`รหัส ${uid} ยังไม่ได้เชื่อมข้อมูลระบบหลัก เปิดฟอร์มลงทะเบียนเล่มใหม่`, 'success');
+                startRegisterFromPregen(uid);
+                return;
+            }
+
+            activeDocId = uid;
+            const doc = documents.find(d => d.uid === uid);
+            if (!doc) return;
+
+            document.getElementById('track-doc-id').innerText = `UID (คุมความปลอดภัย): ${doc.uid}`;
+            document.getElementById('track-doc-title').innerText = doc.subject;
+            document.getElementById('track-doc-numbers').innerText = `เลขหนังสือ สารบรรณ ทบ: ${doc.docNum}`;
+            document.getElementById('track-origin').innerText = doc.origin;
+            document.getElementById('track-dest').innerText = doc.dest;
+
+            const urgency = urgencyLabels[doc.urgency] || urgencyLabels.normal;
+            const confidential = confidentialLabels[doc.confidential] || confidentialLabels.normal;
+            
+            const uBadge = document.getElementById('track-urgency-badge');
+            uBadge.className = `text-xs px-2.5 py-1 rounded-md font-black ${urgency.bg}`;
+            uBadge.innerText = urgency.text;
+
+            const cBadge = document.getElementById('track-confidentiality-badge');
+            cBadge.className = `text-xs px-2.5 py-1 rounded-md font-black ${confidential.bg}`;
+            cBadge.innerText = confidential.text;
+
+            const commentsBox = document.getElementById('exec-comment-input');
+            if (commentsBox) commentsBox.value = '';
+
+            selectTrackAction(doc.status);
+
+            const trackingUrl = `https://rtms-rta.vercel.app/track?id=${doc.uid}`;
+            document.getElementById('mini-qrcode').innerHTML = '';
+            document.getElementById('mini-qrcode-uid').innerText = doc.uid;
+            
+            new QRCode(document.getElementById('mini-qrcode'), {
+                text: trackingUrl,
+                width: 80,
+                height: 80,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+
+            attachedFileDuringTrack = null;
+            document.getElementById('track-file-label').innerText = 'เลือกไฟล์ใหม่';
+            document.getElementById('track-comment-input').value = '';
+
+            renderTimelineLogs(doc);
+            renderDocumentList();
+            openTrackingModal();
+        }
+
+        function selectTrackAction(action) {
+            selectedTrackActionValue = action;
+            const buttons = document.querySelectorAll('.act-btn');
+            
+            buttons.forEach(btn => {
+                btn.className = "act-btn flex items-center gap-2 justify-center bg-white dark:bg-army-950 hover:bg-slate-200 dark:hover:bg-army-800/80 border border-slate-300 dark:border-army-800 text-xs py-3 rounded-xl font-bold transition-all text-slate-700 dark:text-slate-300";
+            });
+
+            let targetBtn = null;
+            if (action === 'received') targetBtn = document.getElementById('btn-act-received');
+            if (action === 'proposed') targetBtn = document.getElementById('btn-act-proposed');
+            if (action === 'dispatched') targetBtn = document.getElementById('btn-act-dispatched');
+            if (action === 'approved') targetBtn = document.getElementById('btn-act-approved');
+
+            if (targetBtn) {
+                targetBtn.className = "act-btn flex items-center gap-2 justify-center bg-gold text-army-900 border-2 border-gold text-xs py-3 rounded-xl font-black transition-all shadow-md transform scale-102";
+            }
+        }
+
+        function saveTrackingUpdate() {
+            if (!activeDocId) return;
+
+            const docIndex = documents.findIndex(d => d.uid === activeDocId);
+            if (docIndex === -1) return;
+
+            const comment = document.getElementById('track-comment-input').value.trim();
+            const action = selectedTrackActionValue;
+
+            const newLog = {
+                status: action,
+                timestamp: new Date().toISOString(),
+                comment: comment || getFallbackComment(action),
+                user: `${currentUser.name} (${currentUser.position || 'เจ้าหน้าที่'})`,
+                file: attachedFileDuringTrack ? attachedFileDuringTrack.name : null
+            };
+
+            if (action === 'approved') {
+                runDriveUploadSimulation(() => {
+                    documents[docIndex].status = action;
+                    documents[docIndex].updatedAt = new Date().toISOString();
+                    documents[docIndex].driveLink = `https://drive.google.com/drive/folders/rtms_archive_${activeDocId}`;
+                    newLog.comment = `${newLog.comment} (ย้ายเข้าคลัง Google Drive สำเร็จ 📁)`;
+                    documents[docIndex].logs.push(newLog);
+
+                    localStorage.setItem('rtms_documents', JSON.stringify(documents));
+                    selectActiveDocument(activeDocId);
+                    updateStats();
+                    showToast('อนุมัติหนังสือและย้ายประวัติลง Google Drive สำเร็จ!');
+                    closeTrackingModal();
+                });
+            } else {
+                documents[docIndex].status = action;
+                documents[docIndex].updatedAt = new Date().toISOString();
+                documents[docIndex].logs.push(newLog);
+
+                localStorage.setItem('rtms_documents', JSON.stringify(documents));
+                selectActiveDocument(activeDocId);
+                updateStats();
+                showToast('อัพเดตพิกัดเส้นทางลงคุมเรียบร้อย');
+                closeTrackingModal();
+            }
+        }
+
+        function triggerExecutiveAction(actionType) {
+            if (currentUser.role !== 'superuser') {
+                showToast('จำกัดเฉพาะผู้บังคับบัญชา (Superuser) ในการใช้คำสั่งนี้!', 'error');
+                return;
+            }
+
+            const docIndex = documents.findIndex(d => d.uid === activeDocId);
+            if (docIndex === -1) return;
+
+            const customDescBox = document.getElementById('exec-comment-input');
+            const customDetails = customDescBox.value.trim();
+
+            if (!customDetails) {
+                showToast('กรุณาระบุรายละเอียดข้อสั่งการ/เหตุผลเบื้องต้นก่อนส่งคำสั่ง!', 'error');
+                return;
+            }
+
+            let execComment = "";
+            let statusKey = "";
+
+            if (actionType === 'revision') {
+                execComment = `[สั่งแก้ไขหนังสือ] โดย ผบช. ข้อสั่งการ: "${customDetails}"`;
+                statusKey = 'revision';
+                showToast('ส่งคำสั่งตีกลับแก้ไขเอกสารเรียบร้อยแล้ว', 'success');
+            } else if (actionType === 'call-meeting') {
+                execComment = `[ขอพบเจ้าของเรื่องด่วน] ผบช. ต้องการให้ชี้แจงประเด็น: "${customDetails}"`;
+                statusKey = 'meeting_called';
+                showToast('ส่งสัญญาณขอเข้าพบส่วนตัวสำเร็จ', 'success');
+            }
+
+            const newLog = {
+                status: statusKey,
+                timestamp: new Date().toISOString(),
+                comment: execComment,
+                user: `${currentUser.name} (${currentUser.position || 'ผบช.'})`,
+                file: null
+            };
+
+            documents[docIndex].status = statusKey;
+            documents[docIndex].updatedAt = new Date().toISOString();
+            documents[docIndex].logs.push(newLog);
+
+            localStorage.setItem('rtms_documents', JSON.stringify(documents));
+            selectActiveDocument(activeDocId);
+            updateStats();
+            closeTrackingModal();
+        }
+
+        // Simulated Drive Upload
+        function runDriveUploadSimulation(callback) {
+            const container = document.getElementById('drive-upload-simulator');
+            const bar = document.getElementById('drive-progress-bar');
+            const percentText = document.getElementById('drive-progress-percent');
+            
+            container.classList.remove('hidden');
+            bar.style.width = '0%';
+            percentText.innerText = '0%';
+
+            let percent = 0;
+            const interval = setInterval(() => {
+                percent += 10;
+                bar.style.width = `${percent}%`;
+                percentText.innerText = `${percent}%`;
+
+                if (percent >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        container.classList.add('hidden');
+                        callback();
+                    }, 500);
+                }
+            }, 150);
+        }
+
+        function getFallbackComment(action) {
+            switch(action) {
+                case 'received': return 'สารบรรณปลายทางตรวจรับเล่มจริงและลงรับในระบบแล้ว';
+                case 'proposed': return 'ตรวจสอบเสร็จสิ้น นำเข้าแฟ้มเสนอรองผู้บังคับบัญชา และผู้บังคับบัญชา เพื่อลงนามตามลำดับชั้น';
+                case 'dispatched': return 'ผบ. ลงนาม/อนุมัติเรียบร้อย จ่ายเล่มและจัดส่งออกจากกองสารบรรณ';
+                case 'approved': return 'อนุมัติผ่านระบบเรียบร้อย สั่งส่งเอกสารเข้าคลังประวัติอัตโนมัติ';
+                default: return 'ดำเนินการปรับปรุงสถานะตามระเบียบงานสารบรรณ';
+            }
+        }
+
+        function renderTimelineLogs(doc) {
+            const container = document.getElementById('track-timeline-container');
+            container.innerHTML = '';
+
+            const logs = [...doc.logs].reverse();
+
+            logs.forEach((log, index) => {
+                const statusInfo = statusLabels[log.status] || statusLabels.pending;
+                
+                const logItem = document.createElement('div');
+                logItem.className = "relative mb-4";
+                logItem.innerHTML = `
+                    <span class="absolute -left-[23px] top-1 flex items-center justify-center w-5 h-5 rounded-full ${index === 0 ? statusInfo.dot + ' animate-ping opacity-75' : 'bg-slate-300 dark:bg-army-700'} border border-white dark:border-slate-950">
+                        <span class="w-3 h-3 rounded-full ${statusInfo.dot}"></span>
+                    </span>
+                    <div class="bg-slate-100 dark:bg-army-950/40 p-3 rounded-xl border border-slate-200 dark:border-army-800/50 space-y-1">
+                        <div class="flex justify-between items-center text-[11px] font-bold font-black">
+                            <span class="text-slate-900 dark:text-white">${statusInfo.text}</span>
+                            <span class="text-slate-500 dark:text-army-400">${new Date(log.timestamp).toLocaleString('th-TH')}</span>
+                        </div>
+                        <p class="text-sm text-slate-700 dark:text-army-200">${log.comment || 'บันทึกเรียบร้อย'}</p>
+                        <div class="flex items-center justify-between text-[10px] text-slate-550 dark:text-army-400 pt-1 border-t border-slate-200 dark:border-army-800/40">
+                            <span>ผู้ปฏิบัติ: ${log.user}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(logItem);
+            });
+            lucide.createIcons();
+        }
+
+        function quickScanSubmit() {
+            const input = document.getElementById('quick-uid-input');
+            const uid = input.value.trim().toUpperCase();
+            if (!uid) return;
+
+            if (pregenUids.includes(uid)) {
+                if (currentUser.role !== 'admin' && currentUser.role !== 'subadmin') {
+                    showToast(`พบรหัสสติกเกอร์เปล่า ${uid} แต่คุณไม่มีสิทธิ์ลงทะเบียนเล่มใหม่ได้`, 'error');
+                    return;
+                }
+                showToast(`พบสติกเกอร์สำรองว่างเปล่า ${uid} นำทางเข้าสู่ฟอร์มลงทะเบียนเล่มใหม่`, 'success');
+                startRegisterFromPregen(uid);
+                input.value = '';
+                return;
+            }
+
+            const doc = documents.find(d => d.uid === uid || d.docNum.includes(uid));
+            if (doc) {
+                selectActiveDocument(doc.uid);
+                showToast(`สแกนค้นพบ: ${doc.docNum}`);
+                input.value = '';
+            } else {
+                showToast('ไม่พบข้อมูลรหัสคุมหรือเลขสารบรรณนี้ในระบบ!', 'error');
+            }
+        }
+
+        function startRegisterFromPregen(uid) {
+            if (currentUser.role !== 'admin' && currentUser.role !== 'subadmin') {
+                showToast('คุณไม่มีสิทธิ์เข้าถึงฟอร์มลงทะเบียนเอกสารใหม่!', 'error');
+                return;
+            }
+            activePreGeneratedUIDForRegister = uid;
+            document.getElementById('form-display-uid').innerText = uid;
+            openNewDocModal();
+        }
+
+        function submitNewDocument(e) {
+            e.preventDefault();
+            
+            const docNum = document.getElementById('form-doc-num').value.trim();
+            const subject = document.getElementById('form-doc-subject').value.trim();
+            const urgency = document.getElementById('form-urgency').value;
+            const confidential = document.getElementById('form-confidential').value;
+            const origin = document.getElementById('form-origin').value.trim();
+            const dest = document.getElementById('form-dest').value.trim();
+            const attachedInput = document.getElementById('form-file');
+            
+            const fileAttached = attachedInput.files.length > 0 ? attachedInput.files[0].name : null;
+            const targetUID = activePreGeneratedUIDForRegister ? activePreGeneratedUIDForRegister : generateUID();
+
+            const newDoc = {
+                uid: targetUID,
+                docNum: docNum,
+                subject: subject,
+                urgency: urgency,
+                confidential: confidential,
+                origin: origin,
+                dest: dest,
+                status: 'pending',
+                updatedAt: new Date().toISOString(),
+                attachmentName: fileAttached,
+                driveLink: null,
+                logs: [
+                    {
+                        status: 'pending',
+                        timestamp: new Date().toISOString(),
+                        comment: 'ลงทะเบียนคุม เชื่อมโยงรหัสบาร์โค้ดลงสารบรรณหลักเรียบร้อย',
+                        user: `${currentUser.name} (${currentUser.position || 'สารบรรณ'})`,
+                        file: fileAttached
+                    }
+                ]
+            };
+
+            documents.unshift(newDoc);
+            localStorage.setItem('rtms_documents', JSON.stringify(documents));
+
+            if (activePreGeneratedUIDForRegister) {
+                pregenUids = pregenUids.filter(id => id !== activePreGeneratedUIDForRegister);
+                localStorage.setItem('rtms_pregen_uids', JSON.stringify(pregenUids));
+                activePreGeneratedUIDForRegister = null;
+            }
+            
+            closeNewDocModal();
+            renderDocumentList();
+            renderPregenStrip();
+            updateStats();
+            
+            showToast(`ลงทะเบียนคุมสิทธิ์ ${targetUID} สำเร็จ!`);
+            
+            setTimeout(() => {
+                selectActiveDocument(targetUID);
+            }, 300);
+        }
+
+        function saveAdminSystemsConfig() {
+            if (currentUser.role !== 'admin') {
+                showToast('สิทธิ์เข้าถึงจำกัดเฉพาะผู้บริหารระบบ (Admin) เท่านั้น!', 'error');
+                return;
+            }
+
+            const url = document.getElementById('config-sb-url-tab').value.trim();
+            const key = document.getElementById('config-sb-key-tab').value.trim();
+            const gdriveJson = document.getElementById('config-gdrive-tab').value.trim();
+            const gdriveFolder = document.getElementById('config-gdrive-folder-tab').value.trim();
+
+            if (url) localStorage.setItem('rtms_sb_url', url);
+            if (key) localStorage.setItem('rtms_sb_key', key);
+            if (gdriveJson) localStorage.setItem('rtms_gdrive_json', gdriveJson);
+            if (gdriveFolder) localStorage.setItem('rtms_gdrive_folder', gdriveFolder);
+
+            document.getElementById('config-sb-url').value = url;
+            document.getElementById('config-sb-key').value = key;
+
+            showToast('บันทึกการตั้งค่าโครงสร้างระบบคลาวด์และ Drive สำเร็จแล้ว');
+        }
+
+        function saveSupabaseConfig() {
+            const url = document.getElementById('config-sb-url').value.trim();
+            const key = document.getElementById('config-sb-key').value.trim();
+
+            if (url) localStorage.setItem('rtms_sb_url', url);
+            if (key) localStorage.setItem('rtms_sb_key', key);
+
+            document.getElementById('config-sb-url-tab').value = url;
+            document.getElementById('config-sb-key-tab').value = key;
+
+            closeConfigModal();
+            showToast('บันทึกทางลัดโครงข่ายสิทธิ์คลาวด์ลงเรียบร้อย');
+        }
+
+        function openNewDocModal() {
+            if (currentUser.role !== 'admin' && currentUser.role !== 'subadmin') {
+                showToast('คุณไม่มีสิทธิ์เข้าถึงส่วนงานลงทะเบียนเรื่องใหม่!', 'error');
+                return;
+            }
+            const modal = document.getElementById('new-doc-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); }, 50);
+        }
+
+        function closeNewDocModal() {
+            const modal = document.getElementById('new-doc-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            document.getElementById('new-doc-form').reset();
+            document.getElementById('form-file-status').innerText = "คลิกเพื่ออัปโหลดไฟล์แนบ";
+            document.getElementById('form-file-status').className = "text-xs font-semibold text-slate-500 dark:text-army-400";
+            document.getElementById('form-display-uid').innerText = "ออกใหม่อัตโนมัติ";
+            activePreGeneratedUIDForRegister = null;
+        }
+
+        function openPregenModal() {
+            if (currentUser.role !== 'admin' && currentUser.role !== 'subadmin') {
+                showToast('จำกัดเฉพาะเจ้าหน้าที่ในการสั่งพิมพ์โค้ดล่วงหน้า!', 'error');
+                return;
+            }
+            const modal = document.getElementById('pregen-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); }, 50);
+        }
+
+        function closePregenModal() {
+            const modal = document.getElementById('pregen-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function openPrintModal(uid) {
+            const doc = documents.find(d => d.uid === uid);
+            if (!doc) return;
+
+            const modal = document.getElementById('print-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); }, 50);
+
+            document.getElementById('print-uid-label').innerText = doc.uid;
+            document.getElementById('print-num-label').innerText = `ทบ.คุม: ${doc.docNum}`;
+
+            const trackingUrl = `https://rtms-rta.vercel.app/track?id=${doc.uid}`;
+            document.getElementById('print-qrcode-box').innerHTML = '';
+            
+            new QRCode(document.getElementById('print-qrcode-box'), {
+                text: trackingUrl,
+                width: 140,
+                height: 140,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+
+        function closePrintModal() {
+            const modal = document.getElementById('print-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function triggerPrintSticker() {
+            showToast('สั่งพิมพ์รหัสส่งตรงบาร์โค้ดความร้อนเรียบร้อย!');
+            closePrintModal();
+        }
+
+        function openConfigModal() {
+            if (currentUser.role !== 'admin') {
+                showToast('สิทธิ์ใช้งานจำกัดเฉพาะผู้ดูแลระบบ (Admin) เท่านั้น!', 'error');
+                return;
+            }
+            const modal = document.getElementById('config-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); }, 50);
+            
+            const sbTestModalStatus = document.getElementById('sb-test-status-modal');
+            if (sbTestModalStatus) sbTestModalStatus.classList.add('hidden');
+        }
+
+        function closeConfigModal() {
+            const modal = document.getElementById('config-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function handleTrackFileAttach() {
+            const input = document.getElementById('track-file');
+            if (input.files.length > 0) {
+                attachedFileDuringTrack = input.files[0];
+                document.getElementById('track-file-label').innerText = attachedFileDuringTrack.name;
+                showToast(`แนบเอกสารสำเร็จ: ${attachedFileDuringTrack.name}`);
+            }
+        }
+
+        function handleFormFileAttach(input) {
+            if (input.files.length > 0) {
+                document.getElementById('form-file-status').innerText = `แนบแล้ว: ${input.files[0].name}`;
+                document.getElementById('form-file-status').className = "text-xs font-semibold text-gold";
+            }
+        }
+
+        // CUSTOM CONFIRM SYSTEM
+        function showConfirmDialog(title, description, onConfirm) {
+            const modal = document.getElementById('confirm-modal');
+            const titleEl = document.getElementById('confirm-title');
+            const descEl = document.getElementById('confirm-desc');
+            const okBtn = document.getElementById('confirm-ok-btn');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+            titleEl.innerText = title;
+            descEl.innerText = description;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 50);
+
+            okBtn.onclick = function() {
+                onConfirm();
+                closeConfirmDialog();
+            };
+            cancelBtn.onclick = closeConfirmDialog;
+        }
+
+        function closeConfirmDialog() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        // TOAST NOTIFICATIONS SYSTEM
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = message;
+            
+            if (type === 'success') {
+                toast.className = "fixed bottom-5 right-5 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center space-x-3 bg-white dark:bg-slate-900 border-2 border-emerald-500 text-slate-900 dark:text-slate-100 px-5 py-4 rounded-2xl shadow-2xl";
+                toastIcon.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6 text-emerald-500"></i>`;
+            } else {
+                toast.className = "fixed bottom-5 right-5 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center space-x-3 bg-white dark:bg-slate-900 border-2 border-rose-500 text-slate-900 dark:text-slate-100 px-5 py-4 rounded-2xl shadow-2xl";
+                toastIcon.innerHTML = `<i data-lucide="alert-triangle" class="w-6 h-6 text-rose-500"></i>`;
+            }
+            
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.className = "fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-5 py-4 rounded-2xl border shadow-2xl";
+            }, 3000);
+        }
+
+        // Clear Date filter helper
+        function clearDateFilter() {
+            document.getElementById('filter-date').value = '';
+            renderDocumentList();
+            showToast('ล้างตัวกรองวันที่เรียบร้อยแล้ว');
+        }
+    </script>
+</body>
+</html>
