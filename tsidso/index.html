@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TSID Smart Office</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- QR Code Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Line LIFF -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; padding-bottom: 70px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-item.active { color: #2563eb; font-weight: bold; }
+        /* Loader */
+        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <!-- Loader -->
+    <div id="loader">
+        <div class="spinner mb-4"></div>
+        <p class="text-gray-600 font-medium">กำลังโหลด TSID Smart Office...</p>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
+        <h1 class="text-xl font-bold"><i class="fas fa-building mr-2"></i>TSID Smart Office</h1>
+        <img id="user-avatar-header" src="" class="w-8 h-8 rounded-full border-2 border-white hidden" alt="Profile">
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-4 max-w-md mx-auto" id="app-container" style="display: none;">
+
+        <!-- 1. Profile Tab -->
+        <section id="tab-profile" class="tab-content active">
+            <div class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-bold border-b pb-2 mb-4 text-blue-600"><i class="fas fa-id-card mr-2"></i>ข้อมูลโปรไฟล์</h2>
+                
+                <div id="profile-display" class="hidden text-sm space-y-3">
+                    <div class="flex justify-center mb-4">
+                        <img id="display-avatar" src="" class="w-24 h-24 rounded-full border-4 border-blue-100 object-cover">
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 border-b pb-2">
+                        <span class="text-gray-500">ยศ-ชื่อ-สกุล:</span>
+                        <span class="col-span-2 font-medium" id="display-fullname"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 border-b pb-2">
+                        <span class="text-gray-500">ชื่อเล่น:</span>
+                        <span class="col-span-2 font-medium" id="display-nickname"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 border-b pb-2">
+                        <span class="text-gray-500">ตำแหน่ง:</span>
+                        <span class="col-span-2 font-medium" id="display-position"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 border-b pb-2">
+                        <span class="text-gray-500">แผนก:</span>
+                        <span class="col-span-2 font-medium" id="display-department"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 border-b pb-2">
+                        <span class="text-gray-500">เบอร์โทร:</span>
+                        <span class="col-span-2 font-medium" id="display-phone"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <span class="text-gray-500">วันเกิด:</span>
+                        <span class="col-span-2 font-medium" id="display-dob"></span>
+                    </div>
+                    <button onclick="toggleEditProfile()" class="w-full mt-4 bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200"><i class="fas fa-edit mr-2"></i>แก้ไขข้อมูล</button>
+                </div>
+
+                <form id="profile-form" class="space-y-3 text-sm">
+                    <div class="text-center mb-2 text-red-500 text-xs" id="first-time-msg">กรุณากรอกข้อมูลให้ครบถ้วนสำหรับการเข้าใช้งานครั้งแรก</div>
+                    <div><label class="block text-gray-700">ยศ</label><input type="text" id="prof-rank" class="w-full border rounded p-2 focus:ring focus:ring-blue-200" required></div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="block text-gray-700">ชื่อ</label><input type="text" id="prof-fname" class="w-full border rounded p-2" required></div>
+                        <div><label class="block text-gray-700">นามสกุล</label><input type="text" id="prof-lname" class="w-full border rounded p-2" required></div>
+                    </div>
+                    <div><label class="block text-gray-700">ชื่อเล่น</label><input type="text" id="prof-nickname" class="w-full border rounded p-2" required></div>
+                    <div><label class="block text-gray-700">ตำแหน่ง</label><input type="text" id="prof-position" class="w-full border rounded p-2" required></div>
+                    <div><label class="block text-gray-700">แผนก</label><input type="text" id="prof-department" class="w-full border rounded p-2" required></div>
+                    <div><label class="block text-gray-700">เบอร์โทรศัพท์</label><input type="tel" id="prof-phone" class="w-full border rounded p-2" required></div>
+                    <div><label class="block text-gray-700">วันเดือนปีเกิด</label><input type="date" id="prof-dob" class="w-full border rounded p-2" required></div>
+                    
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 mt-2"><i class="fas fa-save mr-2"></i>บันทึกข้อมูล</button>
+                    <button type="button" id="btn-cancel-edit" onclick="toggleEditProfile()" class="w-full bg-gray-300 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-400 mt-2 hidden">ยกเลิก</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 2. Upload Document Tab -->
+        <section id="tab-upload" class="tab-content">
+            <div class="bg-white rounded-xl shadow-md p-5 mb-4">
+                <h2 class="text-lg font-bold border-b pb-2 mb-4 text-green-600"><i class="fas fa-cloud-upload-alt mr-2"></i>อัพโหลดเอกสาร</h2>
+                <form id="upload-form" class="space-y-4">
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <input type="file" id="upload-file" class="hidden" onchange="updateFileName()">
+                        <label for="upload-file" class="cursor-pointer flex flex-col items-center">
+                            <i class="fas fa-file-upload text-3xl text-gray-400 mb-2"></i>
+                            <span id="file-name-display" class="text-gray-500 text-sm">คลิกเพื่อเลือกไฟล์</span>
+                        </label>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="flex items-center space-x-2 text-sm">
+                            <input type="checkbox" id="opt-pdf" class="rounded text-blue-600">
+                            <span>แปลงเป็น PDF</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-sm">
+                            <input type="checkbox" id="opt-qr" class="rounded text-blue-600" checked>
+                            <span>สร้าง QR Code</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-sm">
+                            <input type="checkbox" id="opt-shorten" class="rounded text-blue-600" checked>
+                            <span>URL Shorten</span>
+                        </label>
+                    </div>
+                    <button type="button" onclick="handleUpload()" class="w-full bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700"><i class="fas fa-paper-plane mr-2"></i>อัพโหลดไปยัง Drive</button>
+                    <p class="text-xs text-gray-400 text-center">* หมายเหตุ: ระบบจะสร้างโฟลเดอร์ตามวันที่อัตโนมัติ (จำเป็นต้องเชื่อมต่อ Webhook)</p>
+                </form>
+            </div>
+            
+            <!-- Upload Result -->
+            <div id="upload-result" class="bg-white rounded-xl shadow-md p-5 hidden">
+                <h3 class="font-bold text-center mb-3">ผลลัพธ์</h3>
+                <div class="flex justify-center mb-3">
+                    <div id="qrcode-container" class="p-2 bg-white border rounded"></div>
+                </div>
+                <input type="text" id="result-url" class="w-full border rounded p-2 text-sm mb-3 bg-gray-50 text-center" readonly>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="downloadQR()" class="bg-blue-100 text-blue-700 py-2 rounded text-sm font-medium"><i class="fas fa-download mr-1"></i>บันทึก QR</button>
+                    <button onclick="copyURL()" class="bg-gray-100 text-gray-700 py-2 rounded text-sm font-medium"><i class="fas fa-copy mr-1"></i>คัดลอก URL</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Create Folder Tab -->
+        <section id="tab-folder" class="tab-content">
+            <div class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-bold border-b pb-2 mb-4 text-orange-500"><i class="fas fa-folder-plus mr-2"></i>สร้าง Folder ใน Drive</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">วันที่เรื่อง</label>
+                        <input type="date" id="folder-date" class="w-full border rounded p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">เรื่อง / หัวข้อ</label>
+                        <input type="text" id="folder-subject" placeholder="เช่น ประชุมติดตามแผน" class="w-full border rounded p-2">
+                    </div>
+                    <button onclick="createFolder()" class="w-full bg-orange-500 text-white py-2 rounded-lg font-bold hover:bg-orange-600"><i class="fas fa-plus-circle mr-2"></i>สร้าง Folder (สิทธิ์ Editor)</button>
+                    
+                    <div id="folder-result" class="hidden mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm text-center">
+                        <p class="font-bold text-orange-800 mb-2" id="folder-name-display"></p>
+                        <a href="#" id="folder-link" target="_blank" class="text-blue-600 underline break-all">เปิดโฟลเดอร์</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Notification Tab -->
+        <section id="tab-notify" class="tab-content">
+            <div class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-bold border-b pb-2 mb-4 text-purple-600"><i class="fas fa-bell mr-2"></i>ระบบแจ้งเตือน (เตือนก่อน 1 วัน)</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">วัน/เวลา ที่ถึงกำหนด (Deadline)</label>
+                        <input type="datetime-local" id="notify-datetime" class="w-full border rounded p-2 text-sm">
+                        <p class="text-xs text-gray-500 mt-1">ระบบจะส่งแจ้งเตือนผ่าน Line ก่อนถึงเวลานี้ 1 วัน</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">เรื่องที่ต้องการแจ้งเตือน</label>
+                        <textarea id="notify-msg" rows="3" class="w-full border rounded p-2" placeholder="กรอกข้อความ..."></textarea>
+                    </div>
+                    <button onclick="saveNotification()" class="w-full bg-purple-600 text-white py-2 rounded-lg font-bold hover:bg-purple-700"><i class="fas fa-save mr-2"></i>ตั้งเวลาแจ้งเตือน</button>
+                </div>
+
+                <div class="mt-6 border-t pt-4">
+                    <h3 class="font-bold text-sm text-gray-700 mb-2">รายการแจ้งเตือนของคุณ</h3>
+                    <ul id="notify-list" class="space-y-2 text-sm">
+                        <!-- List goes here -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Welfare Tab -->
+        <section id="tab-welfare" class="tab-content">
+            <div class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-bold border-b pb-2 mb-4 text-pink-600"><i class="fas fa-coffee mr-2"></i>สวัสดิการ / สั่งอาหาร</h2>
+                
+                <div id="active-event-container">
+                    <div class="bg-pink-50 p-4 rounded-lg border border-pink-200 mb-4 text-center">
+                        <h3 class="font-bold text-pink-800 text-lg" id="event-title">ยังไม่มีกิจกรรมที่เปิดอยู่</h3>
+                        <p class="text-xs text-pink-600 mt-1" id="event-desc">โปรดรอแอดมินเปิดระบบ</p>
+                    </div>
+                    
+                    <div id="order-form-container" class="hidden space-y-3">
+                        <div>
+                            <label class="block text-sm text-gray-700 mb-1">ระบุเมนูของคุณ</label>
+                            <input type="text" id="order-menu" placeholder="เช่น อเมริกาโน่เย็น ไม่หวาน" class="w-full border rounded p-2">
+                        </div>
+                        <button onclick="submitOrder()" class="w-full bg-pink-600 text-white py-2 rounded-lg font-bold hover:bg-pink-700"><i class="fas fa-paper-plane mr-2"></i>ส่งรายการ</button>
+                    </div>
+                </div>
+
+                <div class="mt-6 border-t pt-4">
+                    <h3 class="font-bold text-sm text-gray-700 mb-2 flex justify-between">
+                        <span>รายการที่สั่งวันนี้</span>
+                        <span id="total-orders" class="text-pink-600">0 รายการ</span>
+                    </h3>
+                    <div class="max-h-40 overflow-y-auto">
+                        <ul id="order-list" class="space-y-2 text-sm divide-y">
+                            <!-- Orders go here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. Admin Tab -->
+        <section id="tab-admin" class="tab-content">
+            <div id="admin-login" class="bg-white rounded-xl shadow-md p-5 text-center">
+                <h2 class="text-lg font-bold mb-4 text-red-600"><i class="fas fa-lock mr-2"></i>สำหรับผู้ดูแลระบบ</h2>
+                <input type="password" id="admin-pass" placeholder="รหัสผ่าน Admin" class="w-full border rounded p-2 text-center mb-3">
+                <button onclick="checkAdmin()" class="w-full bg-gray-800 text-white py-2 rounded-lg font-bold hover:bg-gray-900">เข้าสู่ระบบ Admin</button>
+            </div>
+
+            <div id="admin-panel" class="hidden space-y-4">
+                <div class="bg-red-600 text-white rounded-xl p-4 flex justify-between items-center shadow-md">
+                    <span class="font-bold"><i class="fas fa-cogs mr-2"></i>ส่วนจัดการระบบ</span>
+                    <button onclick="logoutAdmin()" class="text-xs bg-white text-red-600 px-2 py-1 rounded">ออก</button>
+                </div>
+
+                <!-- Admin: Welfare Mgmt -->
+                <div class="bg-white rounded-xl shadow-md p-5">
+                    <h3 class="font-bold border-b pb-2 mb-3">จัดการสวัสดิการ</h3>
+                    <input type="text" id="admin-event-name" placeholder="ชื่อกิจกรรม เช่น เลี้ยงกาแฟบ่ายวันศุกร์" class="w-full border rounded p-2 text-sm mb-2">
+                    <div class="flex gap-2">
+                        <button onclick="openWelfareEvent()" class="flex-1 bg-green-500 text-white py-2 rounded text-sm"><i class="fas fa-play mr-1"></i>เปิดรับรายการ</button>
+                        <button onclick="closeWelfareEvent()" class="flex-1 bg-red-500 text-white py-2 rounded text-sm"><i class="fas fa-stop mr-1"></i>ปิดรับรายการ</button>
+                    </div>
+                    <button onclick="summarizeOrders()" class="w-full mt-2 bg-blue-100 text-blue-700 py-2 rounded text-sm font-bold"><i class="fas fa-list-alt mr-1"></i>สรุปยอดการสั่งทั้งหมด</button>
+                </div>
+
+                <!-- Admin: Notice -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-xs text-yellow-800">
+                    <strong>คำแนะนำสำหรับ Admin:</strong> 
+                    ข้อมูลสมาชิก การแจ้งเตือน และอื่นๆ สามารถจัดการได้โดยตรงผ่าน Dashboard ของ Supabase
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bg-white border-t fixed bottom-0 w-full z-50 flex justify-around text-xs text-gray-500 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <button onclick="switchTab('profile')" id="nav-profile" class="nav-item flex-1 py-3 flex flex-col items-center active">
+            <i class="fas fa-user text-lg mb-1"></i>โปรไฟล์
+        </button>
+        <button onclick="switchTab('upload')" id="nav-upload" class="nav-item flex-1 py-3 flex flex-col items-center">
+            <i class="fas fa-upload text-lg mb-1"></i>อัพโหลด
+        </button>
+        <button onclick="switchTab('folder')" id="nav-folder" class="nav-item flex-1 py-3 flex flex-col items-center">
+            <i class="fas fa-folder text-lg mb-1"></i>โฟลเดอร์
+        </button>
+        <button onclick="switchTab('notify')" id="nav-notify" class="nav-item flex-1 py-3 flex flex-col items-center">
+            <i class="fas fa-bell text-lg mb-1"></i>แจ้งเตือน
+        </button>
+        <button onclick="switchTab('welfare')" id="nav-welfare" class="nav-item flex-1 py-3 flex flex-col items-center">
+            <i class="fas fa-coffee text-lg mb-1"></i>สวัสดิการ
+        </button>
+        <button onclick="switchTab('admin')" id="nav-admin" class="nav-item flex-1 py-3 flex flex-col items-center">
+            <i class="fas fa-cog text-lg mb-1"></i>ตั้งค่า
+        </button>
+    </nav>
+
+    <style>
+        /* Safe area for iPhone X+ */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+
+    <script>
+        // ==========================================
+        // 1. CONFIGURATION (ตั้งค่าระบบที่นี่)
+        // ==========================================
+        const LIFF_ID = "YOUR_LIFF_ID"; // แทนที่ด้วย LIFF ID ของคุณ
+        
+        // Supabase Config
+        const SUPABASE_URL = "YOUR_SUPABASE_URL"; 
+        const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+        
+        // Webhook URLs (จำเป็นต้องสร้าง Backend เช่น Google Apps Script เพื่อทำงานกับ Google Drive)
+        const WEBHOOK_UPLOAD = "YOUR_WEBHOOK_URL_FOR_UPLOAD"; 
+        const WEBHOOK_FOLDER = "YOUR_WEBHOOK_URL_FOR_FOLDER";
+
+        // Initialize Supabase Client
+        // *หมายเหตุ: หากไม่มี Key หน้าเว็บจะรันผ่าน Local State จำลองเพื่อให้เห็น UI
+        let supabaseClient = null;
+        if(SUPABASE_URL !== "YOUR_SUPABASE_URL") {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
+        // Global State
+        let currentUser = {
+            lineUid: null,
+            displayName: null,
+            pictureUrl: null,
+            isRegistered: false,
+            data: {}
+        };
+        let activeEventId = null; // สำหรับระบบสวัสดิการ
+
+        // ==========================================
+        // 2. INITIALIZATION (เริ่มระบบ)
+        // ==========================================
+        window.onload = async function() {
+            try {
+                // Initialize LIFF
+                await liff.init({ liffId: LIFF_ID });
+                
+                if (liff.isLoggedIn()) {
+                    const profile = await liff.getProfile();
+                    currentUser.lineUid = profile.userId;
+                    currentUser.displayName = profile.displayName;
+                    currentUser.pictureUrl = profile.pictureUrl;
+                    
+                    document.getElementById('user-avatar-header').src = profile.pictureUrl;
+                    document.getElementById('user-avatar-header').classList.remove('hidden');
+                    
+                    await checkUserInDB();
+                } else {
+                    liff.login();
+                }
+            } catch (err) {
+                console.warn("LIFF Init failed. Running in browser mode for testing.");
+                // Mock user for browser testing without LIFF
+                currentUser.lineUid = "U123456789mockup";
+                currentUser.pictureUrl = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                await checkUserInDB();
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+                checkActiveWelfareEvent(); // โหลด event สวัสดิการ
+            }
+        };
+
+        // ==========================================
+        // 3. UI NAVIGATION (จัดการหน้าจอ)
+        // ==========================================
+        function switchTab(tabId) {
+            // ซ่อนทุก tab
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // โชว์ tab ที่เลือก
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            document.getElementById(`nav-${tabId}`).classList.add('active');
+
+            if(tabId === 'notify') loadNotifications();
+            if(tabId === 'welfare') loadOrders();
+        }
+
+        // ==========================================
+        // 4. MODULE: PROFILE
+        // ==========================================
+        async function checkUserInDB() {
+            if(!supabaseClient) {
+                // Mockup data กรณีไม่เชื่อมต่อ Supabase
+                console.log("No Supabase connection, using mock mode.");
+                toggleEditProfile(true); 
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('line_uid', currentUser.lineUid)
+                    .single();
+
+                if (data) {
+                    currentUser.isRegistered = true;
+                    currentUser.data = data;
+                    showProfileDisplay();
+                } else {
+                    // ไม่พบข้อมูล ให้แสดงฟอร์มสมัคร
+                    toggleEditProfile(true);
+                }
+            } catch (error) {
+                console.error("Error fetching user:", error);
+                toggleEditProfile(true);
+            }
+        }
+
+        function showProfileDisplay() {
+            document.getElementById('profile-form').classList.add('hidden');
+            document.getElementById('profile-display').classList.remove('hidden');
+            
+            const d = currentUser.data;
+            document.getElementById('display-avatar').src = currentUser.pictureUrl;
+            document.getElementById('display-fullname').textContent = `${d.rank || ''} ${d.fname || ''} ${d.lname || ''}`;
+            document.getElementById('display-nickname').textContent = d.nickname || '-';
+            document.getElementById('display-position').textContent = d.position || '-';
+            document.getElementById('display-department').textContent = d.department || '-';
+            document.getElementById('display-phone').textContent = d.phone || '-';
+            
+            // Format DOB
+            if(d.dob) {
+                const date = new Date(d.dob);
+                document.getElementById('display-dob').textContent = date.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+        }
+
+        function toggleEditProfile(forceForm = false) {
+            const form = document.getElementById('profile-form');
+            const display = document.getElementById('profile-display');
+            const cancelBtn = document.getElementById('btn-cancel-edit');
+            
+            if (forceForm || form.classList.contains('hidden')) {
+                form.classList.remove('hidden');
+                display.classList.add('hidden');
+                
+                if(currentUser.isRegistered) {
+                    cancelBtn.classList.remove('hidden');
+                    document.getElementById('first-time-msg').classList.add('hidden');
+                    // Fill data
+                    const d = currentUser.data;
+                    document.getElementById('prof-rank').value = d.rank || '';
+                    document.getElementById('prof-fname').value = d.fname || '';
+                    document.getElementById('prof-lname').value = d.lname || '';
+                    document.getElementById('prof-nickname').value = d.nickname || '';
+                    document.getElementById('prof-position').value = d.position || '';
+                    document.getElementById('prof-department').value = d.department || '';
+                    document.getElementById('prof-phone').value = d.phone || '';
+                    document.getElementById('prof-dob').value = d.dob || '';
+                } else {
+                    cancelBtn.classList.add('hidden');
+                    document.getElementById('first-time-msg').classList.remove('hidden');
+                }
+            } else {
+                form.classList.add('hidden');
+                display.classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+            const userData = {
+                line_uid: currentUser.lineUid,
+                rank: document.getElementById('prof-rank').value,
+                fname: document.getElementById('prof-fname').value,
+                lname: document.getElementById('prof-lname').value,
+                nickname: document.getElementById('prof-nickname').value,
+                position: document.getElementById('prof-position').value,
+                department: document.getElementById('prof-department').value,
+                phone: document.getElementById('prof-phone').value,
+                dob: document.getElementById('prof-dob').value
+            };
+
+            if(!supabaseClient) {
+                // Mockup save
+                currentUser.data = userData;
+                currentUser.isRegistered = true;
+                setTimeout(() => {
+                    Swal.fire('สำเร็จ', 'บันทึกข้อมูลเรียบร้อย (Mockup)', 'success');
+                    showProfileDisplay();
+                }, 1000);
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient.from('users').upsert(userData, { onConflict: 'line_uid' });
+                if(error) throw error;
+                
+                currentUser.data = userData;
+                currentUser.isRegistered = true;
+                Swal.fire('สำเร็จ', 'บันทึกข้อมูลโปรไฟล์เรียบร้อย', 'success');
+                showProfileDisplay();
+            } catch (err) {
+                Swal.fire('ผิดพลาด', err.message, 'error');
+            }
+        });
+
+        // ==========================================
+        // 5. MODULE: UPLOAD & QR
+        // ==========================================
+        function updateFileName() {
+            const file = document.getElementById('upload-file').files[0];
+            document.getElementById('file-name-display').textContent = file ? file.name : 'คลิกเพื่อเลือกไฟล์';
+            document.getElementById('file-name-display').className = file ? 'text-blue-600 font-bold mt-2 text-sm text-center' : 'text-gray-500 text-sm mt-2';
+        }
+
+        async function handleUpload() {
+            const file = document.getElementById('upload-file').files[0];
+            if (!file) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกไฟล์ก่อนอัพโหลด', 'warning');
+
+            const isPdf = document.getElementById('opt-pdf').checked;
+            const isQr = document.getElementById('opt-qr').checked;
+            const isShorten = document.getElementById('opt-shorten').checked;
+
+            Swal.fire({ title: 'กำลังประมวลผล...', text:'ระบบกำลังส่งไฟล์ไปที่ Drive', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+            // *จำลองการทำงาน: ในสถานการณ์จริง ต้องอ่านไฟล์เป็น Base64 แล้วส่ง POST ไปยัง Webhook (GAS)
+            setTimeout(() => {
+                Swal.close();
+                // สมมติ URL ที่ได้กลับมาจาก Webhook
+                const mockUrl = "https://drive.google.com/file/d/mockup12345/view";
+                const finalUrl = isShorten ? "https://bit.ly/mockTSID" : mockUrl;
+
+                document.getElementById('result-url').value = finalUrl;
+                
+                if(isQr) {
+                    document.getElementById('qrcode-container').innerHTML = '';
+                    new QRCode(document.getElementById('qrcode-container'), {
+                        text: finalUrl,
+                        width: 150,
+                        height: 150,
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                }
+                
+                document.getElementById('upload-result').classList.remove('hidden');
+                document.getElementById('upload-form').reset();
+                updateFileName();
+
+            }, 2000);
+        }
+
+        function copyURL() {
+            const url = document.getElementById('result-url');
+            url.select();
+            document.execCommand('copy');
+            Swal.fire({ icon: 'success', title: 'คัดลอกสำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+        }
+
+        function downloadQR() {
+            const qrCanvas = document.querySelector('#qrcode-container canvas');
+            if(!qrCanvas) return;
+            const image = qrCanvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+            const link = document.createElement('a');
+            link.download = 'QR_Document.png';
+            link.href = image;
+            link.click();
+        }
+
+        // ==========================================
+        // 6. MODULE: CREATE FOLDER
+        // ==========================================
+        function createFolder() {
+            const dateStr = document.getElementById('folder-date').value; // YYYY-MM-DD
+            const subject = document.getElementById('folder-subject').value;
+
+            if(!dateStr || !subject) return Swal.fire('แจ้งเตือน', 'กรุณากรอกวันที่และเรื่อง', 'warning');
+
+            // เปลี่ยนวันที่เป็นฟอร์แมต 25690708 (ปี พ.ศ.)
+            const dateObj = new Date(dateStr);
+            const thYear = dateObj.getFullYear() + 543;
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const folderPrefix = `${thYear}${month}${day}`;
+            const fullFolderName = `${folderPrefix} ${subject}`;
+
+            Swal.fire({ title: 'กำลังสร้าง Folder...', text: 'รันคำสั่งไปยัง Google Drive', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+            // *จำลองการส่งไป Webhook เพื่อสร้าง Folder
+            setTimeout(() => {
+                Swal.fire('สำเร็จ', 'สร้างโฟลเดอร์เรียบร้อย (จำลอง)', 'success');
+                const resultDiv = document.getElementById('folder-result');
+                resultDiv.classList.remove('hidden');
+                document.getElementById('folder-name-display').textContent = fullFolderName;
+                document.getElementById('folder-link').href = "#"; // ใส่ Link ที่ได้จาก API
+            }, 1500);
+        }
+
+        // ==========================================
+        // 7. MODULE: NOTIFICATION
+        // ==========================================
+        async function saveNotification() {
+            const dt = document.getElementById('notify-datetime').value;
+            const msg = document.getElementById('notify-msg').value;
+
+            if(!dt || !msg) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบ', 'warning');
+
+            // คำนวณเวลาแจ้งเตือนล่วงหน้า 1 วัน
+            const targetDate = new Date(dt);
+            const notifyDate = new Date(targetDate.getTime() - (24 * 60 * 60 * 1000));
+
+            Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => { Swal.showLoading(); }});
+
+            if(!supabaseClient) {
+                // Mockup
+                Swal.fire('สำเร็จ', `ระบบจะแจ้งเตือนในวันที่ ${notifyDate.toLocaleString('th-TH')} (Mockup)`, 'success');
+                document.getElementById('notify-datetime').value = '';
+                document.getElementById('notify-msg').value = '';
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient.from('notifications').insert({
+                    line_uid: currentUser.lineUid,
+                    target_time: targetDate.toISOString(),
+                    notify_time: notifyDate.toISOString(),
+                    message: msg,
+                    status: 'pending'
+                });
+                if(error) throw error;
+
+                Swal.fire('สำเร็จ', `ระบบจะแจ้งเตือนในวันที่ ${notifyDate.toLocaleString('th-TH')}`, 'success');
+                document.getElementById('notify-datetime').value = '';
+                document.getElementById('notify-msg').value = '';
+                loadNotifications();
+            } catch (err) {
+                Swal.fire('ผิดพลาด', err.message, 'error');
+            }
+        }
+
+        async function loadNotifications() {
+            const list = document.getElementById('notify-list');
+            if(!supabaseClient) { list.innerHTML = '<li class="text-gray-400 italic">ฟังก์ชันนี้ต้องการฐานข้อมูล</li>'; return; }
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('notifications')
+                    .select('*')
+                    .eq('line_uid', currentUser.lineUid)
+                    .order('notify_time', { ascending: true })
+                    .limit(5);
+
+                if(error) throw error;
+                
+                list.innerHTML = '';
+                if(data.length === 0) {
+                    list.innerHTML = '<li class="text-gray-400 italic">ไม่มีรายการแจ้งเตือน</li>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const nd = new Date(item.notify_time).toLocaleString('th-TH', {dateStyle: 'short', timeStyle: 'short'});
+                    list.innerHTML += `
+                        <li class="bg-purple-50 p-2 rounded border border-purple-100 flex justify-between items-center">
+                            <div class="truncate pr-2">
+                                <span class="font-bold text-purple-700">${item.message}</span>
+                                <div class="text-xs text-gray-500">แจ้งเตือน: ${nd}</div>
+                            </div>
+                            <span class="text-xs bg-${item.status==='pending'?'yellow':'green'}-100 text-${item.status==='pending'?'yellow':'green'}-800 px-2 py-1 rounded-full">${item.status}</span>
+                        </li>
+                    `;
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        // ==========================================
+        // 8. MODULE: WELFARE (สั่งอาหาร/เครื่องดื่ม)
+        // ==========================================
+        async function checkActiveWelfareEvent() {
+            if(!supabaseClient) return; // mockup
+            try {
+                const { data, error } = await supabaseClient
+                    .from('welfare_events')
+                    .select('*')
+                    .eq('status', 'open')
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (data && data.length > 0) {
+                    activeEventId = data[0].id;
+                    document.getElementById('event-title').textContent = data[0].title;
+                    document.getElementById('event-title').className = "font-bold text-green-700 text-lg";
+                    document.getElementById('event-desc').textContent = "ระบบกำลังเปิดรับออเดอร์";
+                    document.getElementById('order-form-container').classList.remove('hidden');
+                    document.querySelector('#active-event-container > div').classList.replace('bg-pink-50', 'bg-green-50');
+                    document.querySelector('#active-event-container > div').classList.replace('border-pink-200', 'border-green-200');
+                } else {
+                    activeEventId = null;
+                    document.getElementById('event-title').textContent = "ยังไม่มีกิจกรรมที่เปิดอยู่";
+                    document.getElementById('event-title').className = "font-bold text-pink-800 text-lg";
+                    document.getElementById('event-desc').textContent = "โปรดรอแอดมินเปิดระบบ";
+                    document.getElementById('order-form-container').classList.add('hidden');
+                    document.querySelector('#active-event-container > div').classList.replace('bg-green-50', 'bg-pink-50');
+                    document.querySelector('#active-event-container > div').classList.replace('border-green-200', 'border-pink-200');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function submitOrder() {
+            const menu = document.getElementById('order-menu').value;
+            if(!menu) return Swal.fire('แจ้งเตือน', 'กรุณาระบุเมนู', 'warning');
+            if(!activeEventId) return Swal.fire('ปิดรับออเดอร์', 'ขณะนี้ไม่มีกิจกรรมที่เปิดรับ', 'error');
+
+            Swal.fire({ title: 'กำลังส่ง...', didOpen: () => { Swal.showLoading(); }});
+
+            if(!supabaseClient) {
+                Swal.fire('สำเร็จ', 'ส่งออเดอร์เรียบร้อย (Mockup)', 'success');
+                document.getElementById('order-menu').value = '';
+                return;
+            }
+
+            try {
+                const userName = currentUser.data.nickname || currentUser.displayName;
+                const { error } = await supabaseClient.from('welfare_orders').insert({
+                    event_id: activeEventId,
+                    line_uid: currentUser.lineUid,
+                    user_name: userName,
+                    menu: menu
+                });
+                if(error) throw error;
+                
+                Swal.fire('สำเร็จ', 'ส่งออเดอร์เรียบร้อย', 'success');
+                document.getElementById('order-menu').value = '';
+                loadOrders();
+            } catch(e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+        }
+
+        async function loadOrders() {
+            if(!supabaseClient || !activeEventId) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('welfare_orders')
+                    .select('*')
+                    .eq('event_id', activeEventId)
+                    .order('created_at', { ascending: false });
+
+                if(error) throw error;
+
+                const list = document.getElementById('order-list');
+                list.innerHTML = '';
+                document.getElementById('total-orders').textContent = `${data.length} รายการ`;
+
+                data.forEach(item => {
+                    // ไฮไลต์ถ้าเป็นของตัวเอง
+                    const isMe = item.line_uid === currentUser.lineUid;
+                    list.innerHTML += `
+                        <li class="py-2 flex justify-between items-center ${isMe ? 'bg-pink-50 px-2 rounded' : ''}">
+                            <div>
+                                <span class="font-bold text-gray-800">${item.menu}</span>
+                                <div class="text-xs text-gray-500">โดย: ${item.user_name}</div>
+                            </div>
+                            ${isMe ? '<span class="text-xs text-pink-600 font-bold">ของฉัน</span>' : ''}
+                        </li>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        // ==========================================
+        // 9. MODULE: ADMIN
+        // ==========================================
+        function checkAdmin() {
+            const pass = document.getElementById('admin-pass').value;
+            if(pass === 'admin1234') {
+                document.getElementById('admin-login').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                document.getElementById('admin-pass').value = '';
+                Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบ Admin สำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+            } else {
+                Swal.fire('รหัสผ่านผิด', 'กรุณาลองใหม่อีกครั้ง', 'error');
+            }
+        }
+
+        function logoutAdmin() {
+            document.getElementById('admin-login').classList.remove('hidden');
+            document.getElementById('admin-panel').classList.add('hidden');
+        }
+
+        async function openWelfareEvent() {
+            const title = document.getElementById('admin-event-name').value;
+            if(!title) return Swal.fire('แจ้งเตือน', 'กรุณาตั้งชื่อกิจกรรม', 'warning');
+            
+            if(!supabaseClient) return Swal.fire('Mockup Mode', 'เปิดกิจกรรมเรียบร้อย', 'success');
+
+            try {
+                // ปิดอันเก่าก่อน
+                await supabaseClient.from('welfare_events').update({ status: 'closed' }).eq('status', 'open');
+                // สร้างอันใหม่
+                const { error } = await supabaseClient.from('welfare_events').insert({ title: title, status: 'open' });
+                if(error) throw error;
+
+                Swal.fire('สำเร็จ', 'เปิดรับรายการเรียบร้อยแล้ว', 'success');
+                document.getElementById('admin-event-name').value = '';
+                checkActiveWelfareEvent();
+            } catch(e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+        }
+
+        async function closeWelfareEvent() {
+            if(!supabaseClient) return Swal.fire('Mockup Mode', 'ปิดกิจกรรมเรียบร้อย', 'success');
+            try {
+                const { error } = await supabaseClient.from('welfare_events').update({ status: 'closed' }).eq('status', 'open');
+                if(error) throw error;
+                Swal.fire('สำเร็จ', 'ปิดรับรายการเรียบร้อยแล้ว', 'success');
+                checkActiveWelfareEvent();
+            } catch(e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+        }
+
+        async function summarizeOrders() {
+            if(!supabaseClient || !activeEventId) return Swal.fire('แจ้งเตือน', 'ไม่มีกิจกรรมที่กำลังเปิดอยู่', 'info');
+            
+            try {
+                const { data, error } = await supabaseClient.from('welfare_orders').select('menu, user_name').eq('event_id', activeEventId);
+                if(error) throw error;
+
+                // สรุปจำนวนแต่ละเมนู
+                let summary = {};
+                data.forEach(item => {
+                    const m = item.menu.trim();
+                    summary[m] = (summary[m] || 0) + 1;
+                });
+
+                let htmlContent = '<div class="text-left text-sm"><ul class="list-disc pl-5 mb-3">';
+                for (const [menu, count] of Object.entries(summary)) {
+                    htmlContent += `<li><b>${menu}</b> : ${count} แก้ว/ที่</li>`;
+                }
+                htmlContent += `</ul><hr><p class="mt-2 text-center font-bold">รวมทั้งหมด: ${data.length} รายการ</p></div>`;
+
+                Swal.fire({
+                    title: 'สรุปรายการสั่ง',
+                    html: htmlContent,
+                    confirmButtonText: 'ปิด'
+                });
+            } catch(e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+        }
+
+    </script>
+</body>
+</html>
