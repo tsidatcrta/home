@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TSID Smart Office</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- QR Code Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Line LIFF -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; padding-bottom: 70px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-item.active { color: #2563eb; font-weight: bold; }
+        /* Loader */
+        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <!-- Loader -->
+    <div id="loader">
+        <div class="spinner mb-4"></div>
+        <p class="text-gray-600 font-medium">กำลังโหลด TSID Smart Office...</p>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50 flex items-center gap-3">
+        <button onclick="openProfileModal()" class="relative shrink-0" title="ข้อมูลโปรไฟล์">
+            <img id="user-avatar-header" src="" class="w-9 h-9 rounded-full border-2 border-white hidden object-cover" alt="Profile">
+            <i id="user-avatar-placeholder" class="fas fa-user-circle text-3xl"></i>
+            <span class="absolute -bottom-0.5 -right-0.5 bg-white text-blue-600 rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px]"><i class="fas fa-chevron-down"></i></span>
+        </button>
+        <h1 class="text-xl font-bold"><i class="fas fa-building mr-2"></i>TSID Smart Office</h1>
+    </header>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="hidden fixed inset-0 z-[60] bg-black/50 flex items-start justify-center overflow-y-auto p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md my-8">
+            <div class="flex justify-between items-center border-b p-4">
+                <h2 class="text-lg font-bold text-blue-600"><i class="fas fa-id-card mr-2"></i>ข้อมูลโปรไฟล์</h2>
+                <button id="profile-modal-close" onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600 px-2"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-5">
+                <div id="profile-display" class="hidden text-sm space-y-3">
+                    <div class="flex justify-center mb-4">
+                        <img id="display-avatar" src="" class="w-24 h-24 rounded-full border-4 border-blue-100 object-cover">
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 border-b pb-2">
+                        <span class="text-gray-500">ยศ-ชื่อ-สกุล:</span>
+                        <span class="col-span-2 font-medium" id="display-fullname"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 border-b pb-2">
+                        <span class="text-gray-500">ชื่อเล่น:</span>
+                        <span class="col-span-2 font-medium" id="display-nickname"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 border-b pb-2">
+                        <span class="text-gray-500">ตำแหน่ง:</span>
+                        <span class="col-span-2 font-medium" id="display-position"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 border-b pb-2">
+                        <span class="text-gray-500">แผนก:</span>
+                        <span class="col-span-2 font-medium" id="display-department"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 border-b pb-2">
+                        <span class="text-gray-500">เบอร์โทร:</span>
+                        <span class="col-span-2 font-medium" id="display-phone"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <span class="text-gray-500">วันเกิด:</span>
+                        <span class="col-span-2 font-medium" id="display-dob"></span>
+                    </div>
+                    <button onclick="toggleEditProfile()" class="w-full mt-4 bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200"><i class="fas fa-edit mr-2"></i>แก้ไขข้อมูล</button>
+                </div>
+
+                <form id="profile-form" class="space-y-3 text-sm">
+                    <div class="text-center mb-2 text-red-500 text-xs" id="first-time-msg">กรุณากรอกข้อมูลให้ครบถ้วนสำหรับการเข้าใช้งานครั้งแรก</div>
+                    <div><label class="block text-gray-700">ยศ</label><input type="text" id="prof-rank" class="w-full border rounded p-2 focus:ring focus:ring-blue-200" required></div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="block text-gray-700">ชื่อ</label><input type="text" id="prof-fname" class="w-full border rounded p-2" required></div>
+                        <div><label class="block text-gray-700">นามสกุล</label><input type="text" id="prof-lname" class="w-full border rounded p-2" required></div>
+                    </div>
+                    <div><label class="block text-gray-700">ชื่อเล่น</label><input type="text" id="prof-nickname" class="w-full border rounded p-2" required></div>
+                    <div><label class="block text-gray-700">ตำแหน่ง</label><input type="text" id="prof-position" class="w-full border rounded p-2" required></div>
+                    <div><label class="block text-gray-700">แผนก</label><input type="text" id="prof-department" class="w-full border rounded p-2" required></div>
+                    <div><label class="block text-gray-700">เบอร์โทรศัพท์</label><input type="tel" id="prof-phone" class="w-full border rounded p-2" required></div>
+                    <div><label class="block text-gray-700">วันเดือนปีเกิด</label><input type="date" id="prof-dob" class="w-full border rounded p-2" required></div>
+                    
+                    <!-- PDPA Consent -->
+                    <div id="pdpa-box" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-gray-600">
+                        <label class="flex items-start gap-2 cursor-pointer">
+                            <input type="checkbox" id="prof-consent" class="mt-0.5 rounded text-blue-600" required>
+                            <span>ข้าพเจ้ายินยอมให้จัดเก็บและใช้ข้อมูลส่วนบุคคลข้างต้น เพื่อการยืนยันตัวตน การติดต่อประสานงาน และการใช้งานระบบ TSID Smart Office เท่านั้น ตาม พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 mt-2"><i class="fas fa-save mr-2"></i>บันทึกข้อมูล</button>
+                    <button type="button" id="btn-cancel-edit" onclick="toggleEditProfile()" class="w-full bg-gray-300 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-400 mt-2 hidden">ยกเลิก</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="p-4 max-w-md mx-auto" id="app-container" style="display: none;">
+
+        <!-- OA Friend Banner (แสดงเมื่อยังไม่ได้ add LINE OA - ไม่บังคับ) -->
+        <div id="oa-banner" class="hidden bg-green-50 border border-green-300 rounded-xl p-3 mb-4 text-sm flex items-start gap-2">
+            <i class="fab fa-line text-green-500 text-2xl mt-1"></i>
+            <div class="flex-1">
+                <p class="font-bold text-green-800">เพิ่มเพื่อน LINE OA (ไม่บังคับ)</p>
+                <p class="text-xs text-green-700 mt-1">เพิ่มเพื่อนเพื่อรับการแจ้งเตือนผ่าน LINE เช่น เตือนงานตามกำหนด</p>
+            </div>
+            <button onclick="dismissOaBanner()" class="text-green-400 hover:text-green-600 px-1"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- 1. Missions Tab (ภารกิจ) -->
+        <section id="tab-missions" class="tab-content active">
+            <div class="bg-white rounded-xl shadow-md p-5 mb-4">
+                <h2 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-600 flex justify-between items-center">
+                    <span><i class="fas fa-tasks mr-2"></i>ภารกิจ</span>
+                    <button onclick="openMissionForm()" class="text-sm bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700"><i class="fas fa-plus mr-1"></i>สร้างภารกิจ</button>
+                </h2>
+
+                <!-- Filter / Sort -->
+                <div class="flex gap-2 mb-3 text-sm">
+                    <select id="mission-sort" onchange="renderMissions()" class="flex-1 border rounded p-2 bg-gray-50">
+                        <option value="created_at">เรียงตามวันที่สร้าง</option>
+                        <option value="start_time">เรียงตามวันปฏิบัติภารกิจ</option>
+                        <option value="creator_name">เรียงตามชื่อผู้สร้าง</option>
+                    </select>
+                    <select id="mission-filter-status" onchange="renderMissions()" class="flex-1 border rounded p-2 bg-gray-50">
+                        <option value="">ทุกสถานะ</option>
+                        <option value="แผนการปฏิบัติ">แผนการปฏิบัติ</option>
+                        <option value="อยู่ระหว่างดำเนินการ">อยู่ระหว่างดำเนินการ</option>
+                        <option value="จบภารกิจ">จบภารกิจ</option>
+                    </select>
+                    <button onclick="toggleMissionOrder()" id="mission-order-btn" class="border rounded px-3 bg-gray-50 text-gray-600" title="สลับลำดับ"><i class="fas fa-sort-amount-down"></i></button>
+                </div>
+
+                <div id="mission-list" class="space-y-3">
+                    <p class="text-gray-400 italic text-sm text-center py-4">กำลังโหลด...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mission Create/Edit Modal -->
+        <div id="mission-modal" class="hidden fixed inset-0 z-[60] bg-black/50 flex items-start justify-center overflow-y-auto p-4">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-md my-8">
+                <div class="flex justify-between items-center border-b p-4">
+                    <h2 class="text-lg font-bold text-indigo-600" id="mission-modal-title"><i class="fas fa-plus-circle mr-2"></i>สร้างภารกิจ</h2>
+                    <button onclick="closeMissionForm()" class="text-gray-400 hover:text-gray-600 px-2"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <div class="p-5 space-y-3 text-sm">
+                    <input type="hidden" id="mission-edit-id">
+                    <div>
+                        <label class="block text-gray-700 mb-1">ชื่องาน/ภารกิจ <span class="text-red-500">*</span></label>
+                        <input type="text" id="mission-title" class="w-full border rounded p-2" placeholder="เช่น รับ-ส่งคณะตรวจเยี่ยม">
+                    </div>
+                    <div class="grid grid-cols-1 gap-2">
+                        <div>
+                            <label class="block text-gray-700 mb-1">เริ่มต้น (วัน-เวลา) <span class="text-red-500">*</span></label>
+                            <input type="datetime-local" id="mission-start" class="w-full border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-1">สิ้นสุด (วัน-เวลา) <span class="text-red-500">*</span></label>
+                            <input type="datetime-local" id="mission-end" class="w-full border rounded p-2">
+                            <p class="text-xs text-gray-400 mt-0.5">รองรับภารกิจข้ามวัน/หลายวัน</p>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-1">ผู้สร้างภารกิจ</label>
+                        <input type="text" id="mission-creator" class="w-full border rounded p-2 bg-gray-100" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-1">ผู้ปฏิบัติงาน (เลือกได้หลายคน)</label>
+                        <div id="mission-assignees" class="border rounded p-2 max-h-36 overflow-y-auto space-y-1 bg-gray-50">
+                            <p class="text-gray-400 italic">กำลังโหลดรายชื่อ...</p>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-1">แนบไฟล์ (ไม่บังคับ)</label>
+                        <input type="file" id="mission-file" class="w-full border rounded p-2 text-xs">
+                        <div id="mission-current-file" class="hidden text-xs mt-1 text-blue-600"></div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-1">สถานะภารกิจ</label>
+                        <select id="mission-status" class="w-full border rounded p-2">
+                            <option value="แผนการปฏิบัติ">แผนการปฏิบัติ</option>
+                            <option value="อยู่ระหว่างดำเนินการ">อยู่ระหว่างดำเนินการ</option>
+                            <option value="จบภารกิจ">จบภารกิจ</option>
+                        </select>
+                    </div>
+                    <button onclick="saveMission()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700"><i class="fas fa-save mr-2"></i>บันทึกภารกิจ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Upload Document Tab -->
+        <section id="tab-upload" class="tab-content">
+            <div class="bg-white rounded-xl shadow-md p-5 mb-4">
+                <h2 class="text-lg font-bold border-b pb-2 mb-4 text-green-600"><i class="fas fa-cloud-upload-alt mr-2"></i>อัพโหลดเอกสาร</h2>
+                <form id="upload-form" class="space-y-4">
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <input type="file" id="upload-file" class="hidden" onchange="updateFileName()">
+                        <label for="upload-file" class="cursor-pointer flex flex-col items-center">
+                            <i class="fas fa-file-upload text-3xl text-gray-400 mb-2"></i>
+                            <span id="file-name-display" class="text-gray-500 text-sm">คลิกเพื่อเลือกไฟล์</span>
+                        </label>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="flex items-center space-x-2 text-sm">
+                            <input type="checkbox" id="opt-pdf" class="rounded text-blue-600">
+                            <span>แปลงเป็น PDF</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-sm">
+                            <input type="checkbox" id="opt-qr" class="rounded text-blue-600" checked>
+                            <span>สร้าง QR Code</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-sm">
+                            <input type="checkbox" id="opt-shorten" class="rounded text-blue-600" checked>
+                            <span>URL Shorten</span>
+                        </label>
+                    </div>
+                    <button type="button" onclick="handleUpload()" class="w-full bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700"><i class="fas fa-paper-plane mr-2"></i>อัพโหลดไปยัง Drive</button>
+                    <p class="text-xs text-gray-400 text-center">* ระบบจะสร้างโฟลเดอร์อัตโนมัติตามวันที่ เช่น "ก.ค. 69 / 8 ก.ค. 69"</p>
+                </form>
+            </div>
+            
+            <!-- Upload Result -->
+            <div id="upload-result" class="bg-white rounded-xl shadow-md p-5 hidden">
+                <h3 class="font-bold text-center mb-3">ผลลัพธ์</h3>
+                <div class="flex justify-center mb-3">
+                    <div id="qrcode-container" class="p-2 bg-white border rounded"></div>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div>
+                        <label class="text-xs text-gray-500">URL เต็ม (Google Drive)</label>
+                        <div class="flex gap-1">
+                            <input type="text" id="result-url-full" class="flex-1 border rounded p-2 text-xs bg-gray-50" readonly>
+                            <button onclick="copyText('result-url-full')" class="bg-gray-100 text-gray-700 px-3 rounded hover:bg-gray-200" title="คัดลอก"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
+                    <div id="result-short-box">
+                        <label class="text-xs text-gray-500">URL ย่อ (TinyURL)</label>
+                        <div class="flex gap-1">
+                            <input type="text" id="result-url-short" class="flex-1 border rounded p-2 text-xs bg-blue-50 text-blue-700 font-medium" readonly>
+                            <button onclick="copyText('result-url-short')" class="bg-blue-100 text-blue-700 px-3 rounded hover:bg-blue-200" title="คัดลอก"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="downloadQR()" class="w-full mt-3 bg-blue-100 text-blue-700 py-2 rounded text-sm font-medium"><i class="fas fa-download mr-1"></i>บันทึก QR Code</button>
+            </div>
+        </section>
+
+        <!-- 3. Create Folder Tab -->
+        <section id="tab-folder" class="tab-content">
+            <div class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-bold border-b pb-2 mb-4 text-orange-500"><i class="fas fa-folder-plus mr-2"></i>สร้าง Folder ใน Drive</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">วันที่เรื่อง</label>
+                        <input type="date" id="folder-date" class="w-full border rounded p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">เรื่อง / หัวข้อ</label>
+                        <input type="text" id="folder-subject" placeholder="เช่น ประชุมติดตามแผน" class="w-full border rounded p-2">
+                    </div>
+                    <button onclick="createFolder()" class="w-full bg-orange-500 text-white py-2 rounded-lg font-bold hover:bg-orange-600"><i class="fas fa-plus-circle mr-2"></i>สร้าง Folder (สิทธิ์ Editor)</button>
+                    
+                    <div id="folder-result" class="hidden mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
+                        <p class="font-bold text-orange-800 mb-2 text-center" id="folder-name-display"></p>
+                        <div class="space-y-2">
+                            <div>
+                                <label class="text-xs text-gray-500">URL เต็ม (Google Drive)</label>
+                                <div class="flex gap-1">
+                                    <input type="text" id="folder-url-full" class="flex-1 border rounded p-2 text-xs bg-white" readonly>
+                                    <button onclick="copyText('folder-url-full')" class="bg-gray-100 text-gray-700 px-3 rounded hover:bg-gray-200" title="คัดลอก"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500">URL ย่อ (TinyURL)</label>
+                                <div class="flex gap-1">
+                                    <input type="text" id="folder-url-short" class="flex-1 border rounded p-2 text-xs bg-orange-100 text-orange-800 font-medium" readonly>
+                                    <button onclick="copyText('folder-url-short')" class="bg-orange-200 text-orange-800 px-3 rounded hover:bg-orange-300" title="คัดลอก"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Notification Tab -->
+        <section id="tab-notify" class="tab-content">
+            <div class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-bold border-b pb-2 mb-4 text-purple-600"><i class="fas fa-bell mr-2"></i>ระบบแจ้งเตือน (เตือนก่อน 1 วัน)</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">วัน/เวลา ที่ถึงกำหนด (Deadline)</label>
+                        <input type="datetime-local" id="notify-datetime" class="w-full border rounded p-2 text-sm">
+                        <p class="text-xs text-gray-500 mt-1">ระบบจะส่งแจ้งเตือนผ่าน Line ก่อนถึงเวลานี้ 1 วัน</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">เรื่องที่ต้องการแจ้งเตือน</label>
+                        <textarea id="notify-msg" rows="3" class="w-full border rounded p-2" placeholder="กรอกข้อความ..."></textarea>
+                    </div>
+                    <button onclick="saveNotification()" class="w-full bg-purple-600 text-white py-2 rounded-lg font-bold hover:bg-purple-700"><i class="fas fa-save mr-2"></i>ตั้งเวลาแจ้งเตือน</button>
+                </div>
+
+                <div class="mt-6 border-t pt-4">
+                    <h3 class="font-bold text-sm text-gray-700 mb-2">รายการแจ้งเตือนของคุณ</h3>
+                    <ul id="notify-list" class="space-y-2 text-sm">
+                        <!-- List goes here -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Welfare Tab -->
+        <section id="tab-welfare" class="tab-content">
+            <div class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-bold border-b pb-2 mb-4 text-pink-600"><i class="fas fa-coffee mr-2"></i>สวัสดิการ / สั่งอาหาร</h2>
+                
+                <div id="active-event-container">
+                    <div class="bg-pink-50 p-4 rounded-lg border border-pink-200 mb-4 text-center">
+                        <h3 class="font-bold text-pink-800 text-lg" id="event-title">ยังไม่มีกิจกรรมที่เปิดอยู่</h3>
+                        <p class="text-xs text-pink-600 mt-1" id="event-desc">โปรดรอแอดมินเปิดระบบ</p>
+                    </div>
+                    
+                    <div id="order-form-container" class="hidden space-y-3">
+                        <div>
+                            <label class="block text-sm text-gray-700 mb-1">ระบุเมนูของคุณ</label>
+                            <input type="text" id="order-menu" placeholder="เช่น อเมริกาโน่เย็น ไม่หวาน" class="w-full border rounded p-2">
+                        </div>
+                        <button onclick="submitOrder()" class="w-full bg-pink-600 text-white py-2 rounded-lg font-bold hover:bg-pink-700"><i class="fas fa-paper-plane mr-2"></i>ส่งรายการ</button>
+                    </div>
+                </div>
+
+                <div class="mt-6 border-t pt-4">
+                    <h3 class="font-bold text-sm text-gray-700 mb-2 flex justify-between">
+                        <span>รายการที่สั่งวันนี้</span>
+                        <span id="total-orders" class="text-pink-600">0 รายการ</span>
+                    </h3>
+                    <div class="max-h-40 overflow-y-auto">
+                        <ul id="order-list" class="space-y-2 text-sm divide-y">
+                            <!-- Orders go here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. Admin Tab -->
+        <section id="tab-admin" class="tab-content">
+            <div id="admin-login" class="bg-white rounded-xl shadow-md p-5 text-center">
+                <h2 class="text-lg font-bold mb-4 text-red-600"><i class="fas fa-lock mr-2"></i>สำหรับผู้ดูแลระบบ</h2>
+                <div class="text-gray-400 text-5xl mb-3"><i class="fas fa-user-shield"></i></div>
+                <p class="text-sm text-gray-600">บัญชีของคุณไม่มีสิทธิ์ผู้ดูแลระบบ</p>
+                <p class="text-xs text-gray-400 mt-2">สิทธิ์ Admin กำหนดโดยผู้ดูแลผ่านฐานข้อมูล (ฟิลด์ is_admin)</p>
+                <button onclick="checkAdmin()" class="w-full mt-4 bg-gray-100 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-200"><i class="fas fa-sync-alt mr-1"></i>ตรวจสอบสิทธิ์อีกครั้ง</button>
+            </div>
+
+            <div id="admin-panel" class="hidden space-y-4">
+                <div class="bg-red-600 text-white rounded-xl p-4 flex justify-between items-center shadow-md">
+                    <span class="font-bold"><i class="fas fa-cogs mr-2"></i>ส่วนจัดการระบบ</span>
+                    <button onclick="logoutAdmin()" class="text-xs bg-white text-red-600 px-2 py-1 rounded">ออก</button>
+                </div>
+
+                <!-- Admin: Welfare Mgmt -->
+                <div class="bg-white rounded-xl shadow-md p-5">
+                    <h3 class="font-bold border-b pb-2 mb-3">จัดการสวัสดิการ</h3>
+                    <input type="text" id="admin-event-name" placeholder="ชื่อกิจกรรม เช่น เลี้ยงกาแฟบ่ายวันศุกร์" class="w-full border rounded p-2 text-sm mb-2">
+                    <div class="flex gap-2">
+                        <button onclick="openWelfareEvent()" class="flex-1 bg-green-500 text-white py-2 rounded text-sm"><i class="fas fa-play mr-1"></i>เปิดรับรายการ</button>
+                        <button onclick="closeWelfareEvent()" class="flex-1 bg-red-500 text-white py-2 rounded text-sm"><i class="fas fa-stop mr-1"></i>ปิดรับรายการ</button>
+                    </div>
+                    <button onclick="summarizeOrders()" class="w-full mt-2 bg-blue-100 text-blue-700 py-2 rounded text-sm font-bold"><i class="fas fa-list-alt mr-1"></i>สรุปยอดการสั่งทั้งหมด</button>
+                </div>
+
+                <!-- Admin: Members -->
+                <div class="bg-white rounded-xl shadow-md p-5">
+                    <h3 class="font-bold border-b pb-2 mb-3 flex justify-between items-center">
+                        <span><i class="fas fa-users mr-1 text-blue-500"></i>สมาชิกที่ลงทะเบียน</span>
+                        <span id="member-count" class="text-sm text-blue-600">-</span>
+                    </h3>
+                    <div class="max-h-48 overflow-y-auto">
+                        <ul id="member-list" class="text-sm divide-y"></ul>
+                    </div>
+                </div>
+
+                <!-- Admin: Activity Logs -->
+                <div class="bg-white rounded-xl shadow-md p-5">
+                    <h3 class="font-bold border-b pb-2 mb-3 flex justify-between items-center">
+                        <span><i class="fas fa-history mr-1 text-gray-500"></i>Log การใช้งานล่าสุด</span>
+                        <button onclick="loadAdminLogs()" class="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200"><i class="fas fa-sync-alt"></i></button>
+                    </h3>
+                    <div class="max-h-64 overflow-y-auto">
+                        <ul id="admin-log-list" class="text-xs divide-y"></ul>
+                    </div>
+                </div>
+
+                <!-- Admin: Notice -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-xs text-yellow-800">
+                    <strong>คำแนะนำสำหรับ Admin:</strong> 
+                    การเพิ่ม/ถอนสิทธิ์ Admin และการจัดการข้อมูลเชิงลึก ทำได้ผ่าน Dashboard ของ Supabase (ตาราง users ฟิลด์ is_admin)
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bg-white border-t fixed bottom-0 w-full z-50 flex justify-around text-xs text-gray-500 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <button onclick="switchTab('missions')" id="nav-missions" class="nav-item flex-1 py-3 flex flex-col items-center active">
+            <i class="fas fa-tasks text-lg mb-1"></i>ภารกิจ
+        </button>
+        <button onclick="switchTab('upload')" id="nav-upload" class="nav-item flex-1 py-3 flex flex-col items-center">
+            <i class="fas fa-upload text-lg mb-1"></i>อัพโหลด
+        </button>
+        <button onclick="switchTab('folder')" id="nav-folder" class="nav-item flex-1 py-3 flex flex-col items-center">
+            <i class="fas fa-folder text-lg mb-1"></i>โฟลเดอร์
+        </button>
+        <button onclick="switchTab('notify')" id="nav-notify" class="nav-item flex-1 py-3 flex flex-col items-center">
+            <i class="fas fa-bell text-lg mb-1"></i>แจ้งเตือน
+        </button>
+        <button onclick="switchTab('welfare')" id="nav-welfare" class="nav-item flex-1 py-3 flex flex-col items-center">
+            <i class="fas fa-coffee text-lg mb-1"></i>สวัสดิการ
+        </button>
+        <button onclick="switchTab('admin')" id="nav-admin" class="nav-item flex-1 py-3 flex flex-col items-center">
+            <i class="fas fa-cog text-lg mb-1"></i>ตั้งค่า
+        </button>
+    </nav>
+
+    <style>
+        /* Safe area for iPhone X+ */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+
+    <script>
+        // ==========================================
+        // 1. CONFIGURATION (ตั้งค่าระบบที่นี่)
+        // ==========================================
+        const LIFF_ID = "2010629718-cqQdn3EB";
+        const LIFF_URL = "https://liff.line.me/2010629718-cqQdn3EB";
+        
+        // Supabase Config
+        const SUPABASE_URL = "https://rdgikfuxlnpvdcsloema.supabase.co"; 
+        const SUPABASE_ANON_KEY = "sb_publishable_jLJ4kaoRsBHm1zuUvwDr8g_clFJh5A5";
+        
+        // Backend: Google Apps Script Web App (จัดการ Google Drive + TinyURL + Chatbot)
+        // Deploy ไฟล์ Code.gs เป็น Web App แล้วนำ URL มาวางตรงนี้ (ลงท้ายด้วย /exec)
+        const GAS_BACKEND_URL = "https://script.google.com/macros/s/AKfycbyh4ysBRiRJYOAW1InmDBjMCRWpL7fTs8cIHz8986tn91vm4TSR0kjk3avkTrellxf7/exec";
+
+        // Initialize Supabase Client
+        // *หมายเหตุ: หากไม่มี Key หน้าเว็บจะรันผ่าน Local State จำลองเพื่อให้เห็น UI
+        let supabaseClient = null;
+        if(SUPABASE_URL && SUPABASE_URL.startsWith("https://")) {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
+        // Global State
+        let currentUser = {
+            lineUid: null,
+            displayName: null,
+            pictureUrl: null,
+            isRegistered: false,
+            isAdmin: false,
+            isFriend: false,
+            data: {}
+        };
+        let activeEventId = null; // สำหรับระบบสวัสดิการ
+
+        // ==========================================
+        // 2. INITIALIZATION (เริ่มระบบ)
+        // ==========================================
+        window.onload = async function() {
+            try {
+                // Initialize LIFF
+                await liff.init({ liffId: LIFF_ID });
+                
+                if (liff.isLoggedIn()) {
+                    const profile = await liff.getProfile();
+                    currentUser.lineUid = profile.userId;
+                    currentUser.displayName = profile.displayName;
+                    currentUser.pictureUrl = profile.pictureUrl;
+                    
+                    document.getElementById('user-avatar-header').src = profile.pictureUrl;
+                    document.getElementById('user-avatar-header').classList.remove('hidden');
+                    document.getElementById('user-avatar-placeholder').classList.add('hidden');
+                    
+                    // ตรวจสอบสถานะการเป็นเพื่อนกับ LINE OA (ไม่บังคับ)
+                    await checkFriendship();
+                    
+                    await checkUserInDB();
+                    logActivity('login', 'เข้าสู่ระบบผ่าน LINE LIFF');
+                } else {
+                    liff.login({ redirectUri: LIFF_URL });
+                    return;
+                }
+            } catch (err) {
+                console.warn("LIFF Init failed. Running in browser mode for testing.");
+                // Mock user for browser testing without LIFF
+                currentUser.lineUid = "U123456789mockup";
+                currentUser.displayName = "Mock Tester";
+                currentUser.pictureUrl = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                Swal.fire({ icon: 'info', title: 'โหมดทดสอบ (Browser)', text: 'เปิดนอก LINE - ใช้บัญชีทดสอบ Mockup ข้อมูลจะถูกบันทึกลงฐานข้อมูลจริง', timer: 3000, showConfirmButton: false });
+                await checkUserInDB();
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+                checkActiveWelfareEvent(); // โหลด event สวัสดิการ
+                loadMissions();            // โหลดภารกิจ
+            }
+        };
+
+        // ==========================================
+        // 3. UI NAVIGATION (จัดการหน้าจอ)
+        // ==========================================
+        function switchTab(tabId) {
+            // ด่านกั้น: ต้องลงทะเบียนก่อนจึงจะใช้เมนูได้
+            if (!currentUser.isRegistered) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณาลงทะเบียนก่อน',
+                    text: 'กรอกข้อมูลโปรไฟล์ให้ครบถ้วนก่อนเข้าใช้งาน',
+                    confirmButtonText: 'ไปหน้าลงทะเบียน'
+                }).then(() => openProfileModal(true));
+                return;
+            }
+
+            // ซ่อนทุก tab
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // โชว์ tab ที่เลือก
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            document.getElementById(`nav-${tabId}`).classList.add('active');
+
+            if(tabId === 'missions') loadMissions();
+            if(tabId === 'notify') loadNotifications();
+            if(tabId === 'welfare') loadOrders();
+            if(tabId === 'admin') applyAdminUI();
+        }
+
+        // ---------- Profile Modal ----------
+        // forceOpen = true คือบังคับเปิดปิดไม่ได้ (ยังไม่ลงทะเบียน)
+        function openProfileModal(forceOpen = false) {
+            document.getElementById('profile-modal').classList.remove('hidden');
+            document.getElementById('profile-modal-close').style.display = forceOpen ? 'none' : '';
+        }
+        function closeProfileModal() {
+            if(!currentUser.isRegistered) return; // ยังไม่ลงทะเบียน ห้ามปิด
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        // ---------- เรียก Backend (Google Apps Script) ----------
+        // ใช้ body แบบ text/plain เพื่อเลี่ยง CORS preflight ของ GAS
+        async function callBackend(payload) {
+            if(!GAS_BACKEND_URL || GAS_BACKEND_URL === "YOUR_GAS_WEB_APP_URL") {
+                throw new Error('ยังไม่ได้ตั้งค่า GAS_BACKEND_URL (ดูวิธีในไฟล์ Code.gs)');
+            }
+            const res = await fetch(GAS_BACKEND_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            const json = await res.json();
+            if(!json.success) throw new Error(json.error || 'Backend error');
+            return json;
+        }
+
+        // คัดลอกข้อความจาก input ตาม id
+        function copyText(inputId) {
+            const el = document.getElementById(inputId);
+            if(!el || !el.value) return;
+            navigator.clipboard.writeText(el.value).then(() => {
+                Swal.fire({ icon: 'success', title: 'คัดลอกสำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 1200 });
+            }).catch(() => {
+                el.select(); document.execCommand('copy');
+                Swal.fire({ icon: 'success', title: 'คัดลอกสำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 1200 });
+            });
+        }
+
+        // ==========================================
+        // 3.5 HELPER: ACTIVITY LOG & FRIENDSHIP
+        // ==========================================
+        // บันทึก Log การใช้งานลงตาราง activity_logs
+        async function logActivity(action, detail = '') {
+            if(!supabaseClient || !currentUser.lineUid) return;
+            try {
+                await supabaseClient.from('activity_logs').insert({
+                    line_uid: currentUser.lineUid,
+                    user_name: currentUser.data?.nickname || currentUser.displayName || '-',
+                    action: action,
+                    detail: detail
+                });
+            } catch(e) { console.error('logActivity error:', e); }
+        }
+
+        // ตรวจสอบว่า add LINE OA แล้วหรือยัง (ไม่บังคับ แค่เชิญชวน)
+        async function checkFriendship() {
+            try {
+                const fs = await liff.getFriendship();
+                currentUser.isFriend = !!fs.friendFlag;
+                if(!fs.friendFlag) {
+                    document.getElementById('oa-banner').classList.remove('hidden');
+                }
+            } catch(e) {
+                // LIFF บางเวอร์ชัน/สภาพแวดล้อมอาจไม่รองรับ getFriendship
+                console.warn('getFriendship not available:', e);
+            }
+        }
+
+        function dismissOaBanner() {
+            document.getElementById('oa-banner').classList.add('hidden');
+        }
+
+        // ==========================================
+        // 4. MODULE: PROFILE
+        // ==========================================
+        async function checkUserInDB() {
+            if(!supabaseClient) {
+                // Mockup data กรณีไม่เชื่อมต่อ Supabase
+                console.log("No Supabase connection, using mock mode.");
+                toggleEditProfile(true);
+                openProfileModal(true);
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('line_uid', currentUser.lineUid)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                if (data) {
+                    currentUser.isRegistered = true;
+                    currentUser.isAdmin = !!data.is_admin;
+                    currentUser.data = data;
+                    showProfileDisplay();
+                    updateFriendStatusInDB();
+                } else {
+                    // ไม่พบข้อมูล -> บังคับเปิด Modal ลงทะเบียน
+                    toggleEditProfile(true);
+                    openProfileModal(true);
+                }
+            } catch (error) {
+                console.error("Error fetching user:", error);
+                toggleEditProfile(true);
+                openProfileModal(true);
+            }
+        }
+
+        // อัพเดทสถานะเพื่อน OA ลงฐานข้อมูล (เงียบๆ ไม่รบกวนผู้ใช้)
+        async function updateFriendStatusInDB() {
+            if(!supabaseClient || !currentUser.isRegistered) return;
+            try {
+                await supabaseClient.from('users')
+                    .update({ is_friend: currentUser.isFriend, last_login: new Date().toISOString() })
+                    .eq('line_uid', currentUser.lineUid);
+            } catch(e) { console.warn(e); }
+        }
+
+        function showProfileDisplay() {
+            document.getElementById('profile-form').classList.add('hidden');
+            document.getElementById('profile-display').classList.remove('hidden');
+            
+            const d = currentUser.data;
+            document.getElementById('display-avatar').src = currentUser.pictureUrl;
+            document.getElementById('display-fullname').textContent = `${d.rank || ''} ${d.fname || ''} ${d.lname || ''}`;
+            document.getElementById('display-nickname').textContent = d.nickname || '-';
+            document.getElementById('display-position').textContent = d.position || '-';
+            document.getElementById('display-department').textContent = d.department || '-';
+            document.getElementById('display-phone').textContent = d.phone || '-';
+            
+            // Format DOB
+            if(d.dob) {
+                const date = new Date(d.dob);
+                document.getElementById('display-dob').textContent = date.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+        }
+
+        function toggleEditProfile(forceForm = false) {
+            const form = document.getElementById('profile-form');
+            const display = document.getElementById('profile-display');
+            const cancelBtn = document.getElementById('btn-cancel-edit');
+            
+            if (forceForm || form.classList.contains('hidden')) {
+                form.classList.remove('hidden');
+                display.classList.add('hidden');
+                
+                if(currentUser.isRegistered) {
+                    cancelBtn.classList.remove('hidden');
+                    document.getElementById('first-time-msg').classList.add('hidden');
+                    // เคยยินยอมแล้ว ไม่ต้องติ๊กซ้ำ
+                    document.getElementById('pdpa-box').classList.add('hidden');
+                    document.getElementById('prof-consent').checked = true;
+                    // Fill data
+                    const d = currentUser.data;
+                    document.getElementById('prof-rank').value = d.rank || '';
+                    document.getElementById('prof-fname').value = d.fname || '';
+                    document.getElementById('prof-lname').value = d.lname || '';
+                    document.getElementById('prof-nickname').value = d.nickname || '';
+                    document.getElementById('prof-position').value = d.position || '';
+                    document.getElementById('prof-department').value = d.department || '';
+                    document.getElementById('prof-phone').value = d.phone || '';
+                    document.getElementById('prof-dob').value = d.dob || '';
+                } else {
+                    cancelBtn.classList.add('hidden');
+                    document.getElementById('first-time-msg').classList.remove('hidden');
+                    document.getElementById('pdpa-box').classList.remove('hidden');
+                    document.getElementById('prof-consent').checked = false;
+                }
+            } else {
+                form.classList.add('hidden');
+                display.classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+            const isFirstTime = !currentUser.isRegistered;
+            const userData = {
+                line_uid: currentUser.lineUid,
+                display_name: currentUser.displayName,
+                rank: document.getElementById('prof-rank').value,
+                fname: document.getElementById('prof-fname').value,
+                lname: document.getElementById('prof-lname').value,
+                nickname: document.getElementById('prof-nickname').value,
+                position: document.getElementById('prof-position').value,
+                department: document.getElementById('prof-department').value,
+                phone: document.getElementById('prof-phone').value,
+                dob: document.getElementById('prof-dob').value,
+                consent: document.getElementById('prof-consent').checked,
+                is_friend: currentUser.isFriend
+            };
+
+            if(!supabaseClient) {
+                // Mockup save
+                currentUser.data = userData;
+                currentUser.isRegistered = true;
+                setTimeout(() => {
+                    Swal.fire('สำเร็จ', 'บันทึกข้อมูลเรียบร้อย (Mockup)', 'success');
+                    showProfileDisplay();
+                }, 1000);
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient.from('users').upsert(userData, { onConflict: 'line_uid' });
+                if(error) throw error;
+                
+                currentUser.data = { ...currentUser.data, ...userData };
+                currentUser.isRegistered = true;
+                logActivity(isFirstTime ? 'register' : 'update_profile',
+                            isFirstTime ? 'ลงทะเบียนสมาชิกใหม่' : 'แก้ไขข้อมูลโปรไฟล์');
+                Swal.fire('สำเร็จ', isFirstTime ? 'ลงทะเบียนเรียบร้อย ยินดีต้อนรับ!' : 'บันทึกข้อมูลโปรไฟล์เรียบร้อย', 'success');
+                showProfileDisplay();
+                document.getElementById('profile-modal-close').style.display = '';
+                closeProfileModal();
+                if(isFirstTime) loadMissions();
+            } catch (err) {
+                Swal.fire('ผิดพลาด', err.message, 'error');
+            }
+        });
+
+        // ==========================================
+        // 5. MODULE: UPLOAD & QR
+        // ==========================================
+        function updateFileName() {
+            const file = document.getElementById('upload-file').files[0];
+            document.getElementById('file-name-display').textContent = file ? file.name : 'คลิกเพื่อเลือกไฟล์';
+            document.getElementById('file-name-display').className = file ? 'text-blue-600 font-bold mt-2 text-sm text-center' : 'text-gray-500 text-sm mt-2';
+        }
+
+        // แปลงไฟล์เป็น Base64 (ตัด prefix data:...;base64, ออก)
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleUpload() {
+            const file = document.getElementById('upload-file').files[0];
+            if (!file) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกไฟล์ก่อนอัพโหลด', 'warning');
+            if (file.size > 25 * 1024 * 1024) return Swal.fire('ไฟล์ใหญ่เกินไป', 'รองรับไฟล์ไม่เกิน 25 MB', 'warning');
+
+            const isPdf = document.getElementById('opt-pdf').checked;
+            const isQr = document.getElementById('opt-qr').checked;
+            const isShorten = document.getElementById('opt-shorten').checked;
+
+            Swal.fire({ title: 'กำลังอัพโหลด...', text:'ระบบกำลังส่งไฟล์ไปที่ Google Drive', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+            try {
+                const base64 = await fileToBase64(file);
+                const result = await callBackend({
+                    action: 'uploadFile',
+                    filename: file.name,
+                    mimeType: file.type || 'application/octet-stream',
+                    data: base64,
+                    convertPdf: isPdf,
+                    shorten: isShorten
+                });
+
+                Swal.close();
+                const fullUrl = result.fullUrl;
+                const shortUrl = result.shortUrl || '';
+
+                document.getElementById('result-url-full').value = fullUrl;
+                document.getElementById('result-url-short').value = shortUrl;
+                document.getElementById('result-short-box').style.display = shortUrl ? '' : 'none';
+
+                if(isQr) {
+                    document.getElementById('qrcode-container').innerHTML = '';
+                    new QRCode(document.getElementById('qrcode-container'), {
+                        text: shortUrl || fullUrl,
+                        width: 150,
+                        height: 150,
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                }
+                document.getElementById('qrcode-container').parentElement.style.display = isQr ? '' : 'none';
+                
+                document.getElementById('upload-result').classList.remove('hidden');
+                document.getElementById('upload-form').reset();
+                updateFileName();
+
+                logActivity('upload', `อัพโหลดไฟล์: ${file.name} -> ${result.folderPath || ''}`);
+                Swal.fire({ icon: 'success', title: 'อัพโหลดสำเร็จ', text: result.folderPath ? `บันทึกไว้ที่: ${result.folderPath}` : '', timer: 2500, showConfirmButton: false });
+            } catch(e) {
+                Swal.fire('ผิดพลาด', e.message, 'error');
+            }
+        }
+
+        function downloadQR() {
+            const qrCanvas = document.querySelector('#qrcode-container canvas');
+            if(!qrCanvas) return;
+            const image = qrCanvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+            const link = document.createElement('a');
+            link.download = 'QR_Document.png';
+            link.href = image;
+            link.click();
+        }
+
+        // ==========================================
+        // 6. MODULE: CREATE FOLDER
+        // ==========================================
+        async function createFolder() {
+            const dateStr = document.getElementById('folder-date').value; // YYYY-MM-DD
+            const subject = document.getElementById('folder-subject').value.trim();
+
+            if(!dateStr || !subject) return Swal.fire('แจ้งเตือน', 'กรุณากรอกวันที่และเรื่อง', 'warning');
+
+            // เปลี่ยนวันที่เป็นฟอร์แมต 25690708 (ปี พ.ศ.)
+            const dateObj = new Date(dateStr);
+            const thYear = dateObj.getFullYear() + 543;
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const fullFolderName = `${thYear}${month}${day} ${subject}`;
+
+            Swal.fire({ title: 'กำลังสร้าง Folder...', text: 'รันคำสั่งไปยัง Google Drive', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+            try {
+                const result = await callBackend({
+                    action: 'createFolder',
+                    folderName: fullFolderName,
+                    shorten: true
+                });
+
+                Swal.fire('สำเร็จ', 'สร้างโฟลเดอร์เรียบร้อย (สิทธิ์ Editor)', 'success');
+                const resultDiv = document.getElementById('folder-result');
+                resultDiv.classList.remove('hidden');
+                document.getElementById('folder-name-display').textContent = fullFolderName;
+                document.getElementById('folder-url-full').value = result.fullUrl;
+                document.getElementById('folder-url-short').value = result.shortUrl || result.fullUrl;
+                logActivity('create_folder', `สร้างโฟลเดอร์: ${fullFolderName}`);
+            } catch(e) {
+                Swal.fire('ผิดพลาด', e.message, 'error');
+            }
+        }
+
+        // ==========================================
+        // 6.5 MODULE: MISSIONS (ภารกิจ)
+        // ==========================================
+        let allMissions = [];
+        let missionOrderDesc = true;
+
+        const MISSION_STATUS_STYLE = {
+            'แผนการปฏิบัติ':        'bg-blue-100 text-blue-700',
+            'อยู่ระหว่างดำเนินการ': 'bg-yellow-100 text-yellow-700',
+            'จบภารกิจ':             'bg-green-100 text-green-700'
+        };
+
+        async function loadMissions() {
+            if(!supabaseClient) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('missions')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if(error) throw error;
+                allMissions = data || [];
+                renderMissions();
+            } catch(e) {
+                console.error(e);
+                document.getElementById('mission-list').innerHTML = '<p class="text-red-400 text-sm text-center py-4">โหลดภารกิจไม่สำเร็จ (ตรวจสอบตาราง missions)</p>';
+            }
+        }
+
+        function toggleMissionOrder() {
+            missionOrderDesc = !missionOrderDesc;
+            document.querySelector('#mission-order-btn i').className =
+                missionOrderDesc ? 'fas fa-sort-amount-down' : 'fas fa-sort-amount-up';
+            renderMissions();
+        }
+
+        function renderMissions() {
+            const sortKey = document.getElementById('mission-sort').value;
+            const filterStatus = document.getElementById('mission-filter-status').value;
+            const list = document.getElementById('mission-list');
+
+            let items = [...allMissions];
+            if(filterStatus) items = items.filter(m => m.status === filterStatus);
+
+            items.sort((a, b) => {
+                let va = a[sortKey] || '', vb = b[sortKey] || '';
+                if(sortKey === 'creator_name') {
+                    return missionOrderDesc ? String(vb).localeCompare(String(va), 'th') : String(va).localeCompare(String(vb), 'th');
+                }
+                return missionOrderDesc ? new Date(vb) - new Date(va) : new Date(va) - new Date(vb);
+            });
+
+            if(items.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 italic text-sm text-center py-6"><i class="fas fa-inbox text-2xl block mb-2"></i>ยังไม่มีภารกิจ</p>';
+                return;
+            }
+
+            const fmt = (iso) => iso ? new Date(iso).toLocaleString('th-TH', { day:'numeric', month:'short', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '-';
+
+            list.innerHTML = '';
+            items.forEach(m => {
+                const canManage = currentUser.isAdmin || m.creator_uid === currentUser.lineUid;
+                const assignees = Array.isArray(m.assignees) ? m.assignees : [];
+                const badge = MISSION_STATUS_STYLE[m.status] || 'bg-gray-100 text-gray-600';
+                list.innerHTML += `
+                    <div class="border rounded-lg p-3 hover:shadow-sm transition">
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="min-w-0">
+                                <div class="font-bold text-gray-800 truncate">${escapeHtml(m.title)}</div>
+                                <div class="text-xs text-gray-500 mt-0.5"><i class="far fa-clock mr-1"></i>${fmt(m.start_time)} → ${fmt(m.end_time)}</div>
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded-full shrink-0 ${badge}">${escapeHtml(m.status)}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-2">
+                            <div><i class="fas fa-user-edit mr-1"></i>ผู้สร้าง: ${escapeHtml(m.creator_name || '-')}</div>
+                            ${assignees.length ? `<div class="mt-1"><i class="fas fa-users mr-1"></i>ผู้ปฏิบัติ: ${assignees.map(a => escapeHtml(a.name)).join(', ')}</div>` : ''}
+                            ${m.attachment_url ? `<div class="mt-1"><i class="fas fa-paperclip mr-1"></i><a href="${escapeHtml(m.attachment_url)}" target="_blank" class="text-blue-600 underline">${escapeHtml(m.attachment_name || 'ไฟล์แนบ')}</a></div>` : ''}
+                        </div>
+                        ${canManage ? `
+                        <div class="flex gap-2 mt-3 border-t pt-2">
+                            <button onclick="editMission(${m.id})" class="flex-1 text-xs bg-blue-50 text-blue-600 py-1.5 rounded hover:bg-blue-100"><i class="fas fa-edit mr-1"></i>แก้ไข</button>
+                            <button onclick="deleteMission(${m.id})" class="flex-1 text-xs bg-red-50 text-red-600 py-1.5 rounded hover:bg-red-100"><i class="fas fa-trash mr-1"></i>ลบ</button>
+                        </div>` : ''}
+                    </div>`;
+            });
+        }
+
+        // โหลดรายชื่อสมาชิกจากฐานข้อมูล มาเป็น checkbox multi-select
+        async function loadAssigneeOptions(selected = []) {
+            const box = document.getElementById('mission-assignees');
+            if(!supabaseClient) { box.innerHTML = '<p class="text-gray-400 italic">ต้องเชื่อมต่อฐานข้อมูล</p>'; return; }
+            try {
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('line_uid, rank, fname, lname, nickname')
+                    .order('fname');
+                if(error) throw error;
+
+                const selectedUids = new Set(selected.map(s => s.line_uid));
+                box.innerHTML = data.length === 0 ? '<p class="text-gray-400 italic">ยังไม่มีสมาชิก</p>' : '';
+                data.forEach(u => {
+                    const name = `${u.rank || ''} ${u.fname || ''} ${u.lname || ''}`.trim() || u.nickname || u.line_uid;
+                    const checked = selectedUids.has(u.line_uid) ? 'checked' : '';
+                    box.innerHTML += `
+                        <label class="flex items-center gap-2 cursor-pointer hover:bg-white rounded px-1 py-0.5">
+                            <input type="checkbox" class="assignee-chk rounded text-indigo-600" value="${escapeHtml(u.line_uid)}" data-name="${escapeHtml(name)}" ${checked}>
+                            <span>${escapeHtml(name)} <span class="text-gray-400">(${escapeHtml(u.nickname || '-')})</span></span>
+                        </label>`;
+                });
+            } catch(e) { box.innerHTML = '<p class="text-red-400 italic">โหลดรายชื่อไม่สำเร็จ</p>'; }
+        }
+
+        function openMissionForm(mission = null) {
+            document.getElementById('mission-modal').classList.remove('hidden');
+            document.getElementById('mission-edit-id').value = mission ? mission.id : '';
+            document.getElementById('mission-modal-title').innerHTML = mission
+                ? '<i class="fas fa-edit mr-2"></i>แก้ไขภารกิจ'
+                : '<i class="fas fa-plus-circle mr-2"></i>สร้างภารกิจ';
+            document.getElementById('mission-title').value = mission?.title || '';
+            document.getElementById('mission-start').value = mission?.start_time ? mission.start_time.slice(0,16) : '';
+            document.getElementById('mission-end').value = mission?.end_time ? mission.end_time.slice(0,16) : '';
+            document.getElementById('mission-status').value = mission?.status || 'แผนการปฏิบัติ';
+            document.getElementById('mission-file').value = '';
+
+            // ผู้สร้าง: ดึงจากระบบอัตโนมัติ
+            const d = currentUser.data;
+            const creatorName = mission?.creator_name || `${d.rank || ''} ${d.fname || ''} ${d.lname || ''}`.trim() || currentUser.displayName;
+            document.getElementById('mission-creator').value = creatorName;
+
+            const curFile = document.getElementById('mission-current-file');
+            if(mission?.attachment_url) {
+                curFile.classList.remove('hidden');
+                curFile.innerHTML = `<i class="fas fa-paperclip mr-1"></i>ไฟล์เดิม: <a href="${escapeHtml(mission.attachment_url)}" target="_blank" class="underline">${escapeHtml(mission.attachment_name || 'เปิดไฟล์')}</a> (เลือกไฟล์ใหม่เพื่อแทนที่)`;
+            } else {
+                curFile.classList.add('hidden');
+                curFile.innerHTML = '';
+            }
+
+            loadAssigneeOptions(Array.isArray(mission?.assignees) ? mission.assignees : []);
+        }
+
+        function closeMissionForm() {
+            document.getElementById('mission-modal').classList.add('hidden');
+        }
+
+        async function saveMission() {
+            const editId = document.getElementById('mission-edit-id').value;
+            const title = document.getElementById('mission-title').value.trim();
+            const start = document.getElementById('mission-start').value;
+            const end = document.getElementById('mission-end').value;
+
+            if(!title || !start || !end) return Swal.fire('แจ้งเตือน', 'กรุณากรอกชื่อภารกิจ และวัน-เวลาเริ่มต้น/สิ้นสุด', 'warning');
+            if(new Date(end) < new Date(start)) return Swal.fire('แจ้งเตือน', 'เวลาสิ้นสุดต้องไม่ก่อนเวลาเริ่มต้น', 'warning');
+            if(!supabaseClient) return Swal.fire('แจ้งเตือน', 'ยังไม่ได้เชื่อมต่อฐานข้อมูล', 'warning');
+
+            const assignees = [...document.querySelectorAll('.assignee-chk:checked')]
+                .map(c => ({ line_uid: c.value, name: c.dataset.name }));
+
+            Swal.fire({ title: 'กำลังบันทึกภารกิจ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            try {
+                // อัพโหลดไฟล์แนบ (ถ้ามี) ไปยังโฟลเดอร์ภารกิจใน Drive ผ่าน Backend
+                let attachment = {};
+                const file = document.getElementById('mission-file').files[0];
+                if(file) {
+                    if (file.size > 25 * 1024 * 1024) throw new Error('ไฟล์แนบใหญ่เกิน 25 MB');
+                    const base64 = await fileToBase64(file);
+                    const up = await callBackend({
+                        action: 'uploadMissionFile',
+                        filename: file.name,
+                        mimeType: file.type || 'application/octet-stream',
+                        data: base64
+                    });
+                    attachment = { attachment_url: up.fullUrl, attachment_name: file.name };
+                }
+
+                const d = currentUser.data;
+                const payload = {
+                    title, 
+                    start_time: new Date(start).toISOString(),
+                    end_time: new Date(end).toISOString(),
+                    assignees,
+                    status: document.getElementById('mission-status').value,
+                    ...attachment
+                };
+
+                if(editId) {
+                    // สิทธิ์: ตรวจซ้ำฝั่ง client (UI ซ่อนปุ่มอยู่แล้ว)
+                    const target = allMissions.find(m => m.id == editId);
+                    if(target && !(currentUser.isAdmin || target.creator_uid === currentUser.lineUid)) {
+                        throw new Error('คุณไม่มีสิทธิ์แก้ไขภารกิจนี้');
+                    }
+                    const { error } = await supabaseClient.from('missions').update(payload).eq('id', editId);
+                    if(error) throw error;
+                    logActivity('mission_edit', `แก้ไขภารกิจ: ${title}`);
+                } else {
+                    payload.creator_uid = currentUser.lineUid;
+                    payload.creator_name = `${d.rank || ''} ${d.fname || ''} ${d.lname || ''}`.trim() || currentUser.displayName;
+                    const { error } = await supabaseClient.from('missions').insert(payload);
+                    if(error) throw error;
+                    logActivity('mission_create', `สร้างภารกิจ: ${title}`);
+                }
+
+                Swal.fire('สำเร็จ', 'บันทึกภารกิจเรียบร้อย', 'success');
+                closeMissionForm();
+                loadMissions();
+            } catch(e) {
+                Swal.fire('ผิดพลาด', e.message, 'error');
+            }
+        }
+
+        function editMission(id) {
+            const m = allMissions.find(x => x.id === id);
+            if(!m) return;
+            if(!(currentUser.isAdmin || m.creator_uid === currentUser.lineUid)) {
+                return Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้สร้างภารกิจหรือ Admin เท่านั้น', 'info');
+            }
+            openMissionForm(m);
+        }
+
+        async function deleteMission(id) {
+            const m = allMissions.find(x => x.id === id);
+            if(!m) return;
+            if(!(currentUser.isAdmin || m.creator_uid === currentUser.lineUid)) {
+                return Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้สร้างภารกิจหรือ Admin เท่านั้น', 'info');
+            }
+            const confirm = await Swal.fire({
+                title: 'ยืนยันการลบ?',
+                text: `ลบภารกิจ "${m.title}" ถาวร`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                confirmButtonText: 'ลบ',
+                cancelButtonText: 'ยกเลิก'
+            });
+            if(!confirm.isConfirmed) return;
+
+            try {
+                const { error } = await supabaseClient.from('missions').delete().eq('id', id);
+                if(error) throw error;
+                logActivity('mission_delete', `ลบภารกิจ: ${m.title}`);
+                Swal.fire({ icon: 'success', title: 'ลบเรียบร้อย', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+                loadMissions();
+            } catch(e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+        }
+
+        // ==========================================
+        // 7. MODULE: NOTIFICATION
+        // ==========================================
+        async function saveNotification() {
+            const dt = document.getElementById('notify-datetime').value;
+            const msg = document.getElementById('notify-msg').value;
+
+            if(!dt || !msg) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบ', 'warning');
+
+            // คำนวณเวลาแจ้งเตือนล่วงหน้า 1 วัน
+            const targetDate = new Date(dt);
+            const notifyDate = new Date(targetDate.getTime() - (24 * 60 * 60 * 1000));
+
+            Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => { Swal.showLoading(); }});
+
+            if(!supabaseClient) {
+                // Mockup
+                Swal.fire('สำเร็จ', `ระบบจะแจ้งเตือนในวันที่ ${notifyDate.toLocaleString('th-TH')} (Mockup)`, 'success');
+                document.getElementById('notify-datetime').value = '';
+                document.getElementById('notify-msg').value = '';
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient.from('notifications').insert({
+                    line_uid: currentUser.lineUid,
+                    target_time: targetDate.toISOString(),
+                    notify_time: notifyDate.toISOString(),
+                    message: msg,
+                    status: 'pending'
+                });
+                if(error) throw error;
+
+                logActivity('notify', `ตั้งแจ้งเตือน: ${msg}`);
+                Swal.fire('สำเร็จ', `ระบบจะแจ้งเตือนในวันที่ ${notifyDate.toLocaleString('th-TH')}`, 'success');
+                document.getElementById('notify-datetime').value = '';
+                document.getElementById('notify-msg').value = '';
+                loadNotifications();
+            } catch (err) {
+                Swal.fire('ผิดพลาด', err.message, 'error');
+            }
+        }
+
+        async function loadNotifications() {
+            const list = document.getElementById('notify-list');
+            if(!supabaseClient) { list.innerHTML = '<li class="text-gray-400 italic">ฟังก์ชันนี้ต้องการฐานข้อมูล</li>'; return; }
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('notifications')
+                    .select('*')
+                    .eq('line_uid', currentUser.lineUid)
+                    .order('notify_time', { ascending: true })
+                    .limit(5);
+
+                if(error) throw error;
+                
+                list.innerHTML = '';
+                if(data.length === 0) {
+                    list.innerHTML = '<li class="text-gray-400 italic">ไม่มีรายการแจ้งเตือน</li>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const nd = new Date(item.notify_time).toLocaleString('th-TH', {dateStyle: 'short', timeStyle: 'short'});
+                    list.innerHTML += `
+                        <li class="bg-purple-50 p-2 rounded border border-purple-100 flex justify-between items-center">
+                            <div class="truncate pr-2">
+                                <span class="font-bold text-purple-700">${escapeHtml(item.message)}</span>
+                                <div class="text-xs text-gray-500">แจ้งเตือน: ${nd}</div>
+                            </div>
+                            <span class="text-xs bg-${item.status==='pending'?'yellow':'green'}-100 text-${item.status==='pending'?'yellow':'green'}-800 px-2 py-1 rounded-full">${item.status}</span>
+                        </li>
+                    `;
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        // ==========================================
+        // 8. MODULE: WELFARE (สั่งอาหาร/เครื่องดื่ม)
+        // ==========================================
+        async function checkActiveWelfareEvent() {
+            if(!supabaseClient) return; // mockup
+            try {
+                const { data, error } = await supabaseClient
+                    .from('welfare_events')
+                    .select('*')
+                    .eq('status', 'open')
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (data && data.length > 0) {
+                    activeEventId = data[0].id;
+                    document.getElementById('event-title').textContent = data[0].title;
+                    document.getElementById('event-title').className = "font-bold text-green-700 text-lg";
+                    document.getElementById('event-desc').textContent = "ระบบกำลังเปิดรับออเดอร์";
+                    document.getElementById('order-form-container').classList.remove('hidden');
+                    document.querySelector('#active-event-container > div').classList.replace('bg-pink-50', 'bg-green-50');
+                    document.querySelector('#active-event-container > div').classList.replace('border-pink-200', 'border-green-200');
+                } else {
+                    activeEventId = null;
+                    document.getElementById('event-title').textContent = "ยังไม่มีกิจกรรมที่เปิดอยู่";
+                    document.getElementById('event-title').className = "font-bold text-pink-800 text-lg";
+                    document.getElementById('event-desc').textContent = "โปรดรอแอดมินเปิดระบบ";
+                    document.getElementById('order-form-container').classList.add('hidden');
+                    document.querySelector('#active-event-container > div').classList.replace('bg-green-50', 'bg-pink-50');
+                    document.querySelector('#active-event-container > div').classList.replace('border-green-200', 'border-pink-200');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function submitOrder() {
+            const menu = document.getElementById('order-menu').value;
+            if(!menu) return Swal.fire('แจ้งเตือน', 'กรุณาระบุเมนู', 'warning');
+            if(!activeEventId) return Swal.fire('ปิดรับออเดอร์', 'ขณะนี้ไม่มีกิจกรรมที่เปิดรับ', 'error');
+
+            Swal.fire({ title: 'กำลังส่ง...', didOpen: () => { Swal.showLoading(); }});
+
+            if(!supabaseClient) {
+                Swal.fire('สำเร็จ', 'ส่งออเดอร์เรียบร้อย (Mockup)', 'success');
+                document.getElementById('order-menu').value = '';
+                return;
+            }
+
+            try {
+                const userName = currentUser.data.nickname || currentUser.displayName;
+                const { error } = await supabaseClient.from('welfare_orders').insert({
+                    event_id: activeEventId,
+                    line_uid: currentUser.lineUid,
+                    user_name: userName,
+                    menu: menu
+                });
+                if(error) throw error;
+                
+                logActivity('order', `สั่งเมนู: ${menu}`);
+                Swal.fire('สำเร็จ', 'ส่งออเดอร์เรียบร้อย', 'success');
+                document.getElementById('order-menu').value = '';
+                loadOrders();
+            } catch(e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+        }
+
+        async function loadOrders() {
+            if(!supabaseClient || !activeEventId) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('welfare_orders')
+                    .select('*')
+                    .eq('event_id', activeEventId)
+                    .order('created_at', { ascending: false });
+
+                if(error) throw error;
+
+                const list = document.getElementById('order-list');
+                list.innerHTML = '';
+                document.getElementById('total-orders').textContent = `${data.length} รายการ`;
+
+                data.forEach(item => {
+                    // ไฮไลต์ถ้าเป็นของตัวเอง
+                    const isMe = item.line_uid === currentUser.lineUid;
+                    list.innerHTML += `
+                        <li class="py-2 flex justify-between items-center ${isMe ? 'bg-pink-50 px-2 rounded' : ''}">
+                            <div>
+                                <span class="font-bold text-gray-800">${escapeHtml(item.menu)}</span>
+                                <div class="text-xs text-gray-500">โดย: ${escapeHtml(item.user_name)}</div>
+                            </div>
+                            ${isMe ? '<span class="text-xs text-pink-600 font-bold">ของฉัน</span>' : ''}
+                        </li>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        // ==========================================
+        // 9. MODULE: ADMIN
+        // ==========================================
+        // ตรวจสิทธิ์ Admin จากฐานข้อมูล (ฟิลด์ is_admin ในตาราง users)
+        function applyAdminUI() {
+            if(currentUser.isAdmin) {
+                document.getElementById('admin-login').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                loadAdminLogs();
+                loadMembers();
+            } else {
+                document.getElementById('admin-login').classList.remove('hidden');
+                document.getElementById('admin-panel').classList.add('hidden');
+            }
+        }
+
+        async function checkAdmin() {
+            if(!supabaseClient || !currentUser.lineUid) {
+                return Swal.fire('แจ้งเตือน', 'ยังไม่ได้เชื่อมต่อระบบ', 'warning');
+            }
+            Swal.fire({ title: 'กำลังตรวจสอบสิทธิ์...', didOpen: () => Swal.showLoading() });
+            try {
+                const { data } = await supabaseClient
+                    .from('users')
+                    .select('is_admin')
+                    .eq('line_uid', currentUser.lineUid)
+                    .maybeSingle();
+                currentUser.isAdmin = !!(data && data.is_admin);
+                Swal.close();
+                if(currentUser.isAdmin) {
+                    logActivity('admin_access', 'เข้าใช้งานส่วนผู้ดูแลระบบ');
+                    Swal.fire({ icon: 'success', title: 'ยืนยันสิทธิ์ Admin สำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+                } else {
+                    Swal.fire('ไม่มีสิทธิ์', 'บัญชีของคุณยังไม่ได้รับสิทธิ์ผู้ดูแลระบบ', 'info');
+                }
+                applyAdminUI();
+            } catch(e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+        }
+
+        function logoutAdmin() {
+            document.getElementById('admin-login').classList.remove('hidden');
+            document.getElementById('admin-panel').classList.add('hidden');
+        }
+
+        // โหลด Log การใช้งานล่าสุด (สำหรับ Admin)
+        async function loadAdminLogs() {
+            if(!supabaseClient) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('activity_logs')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(30);
+                if(error) throw error;
+
+                const actionIcons = {
+                    login: 'fa-sign-in-alt text-blue-500',
+                    register: 'fa-user-plus text-green-500',
+                    update_profile: 'fa-user-edit text-blue-400',
+                    upload: 'fa-cloud-upload-alt text-green-600',
+                    create_folder: 'fa-folder-plus text-orange-500',
+                    notify: 'fa-bell text-purple-500',
+                    order: 'fa-coffee text-pink-500',
+                    admin_access: 'fa-user-shield text-red-500'
+                };
+
+                const list = document.getElementById('admin-log-list');
+                list.innerHTML = data.length === 0 ? '<li class="py-2 text-gray-400 italic">ยังไม่มี Log</li>' : '';
+                data.forEach(item => {
+                    const t = new Date(item.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                    const icon = actionIcons[item.action] || 'fa-circle text-gray-400';
+                    list.innerHTML += `
+                        <li class="py-2 flex items-start gap-2">
+                            <i class="fas ${icon} mt-0.5 w-4 text-center"></i>
+                            <div class="flex-1 min-w-0">
+                                <div class="truncate"><span class="font-bold">${escapeHtml(item.user_name || '-')}</span> — ${escapeHtml(item.detail || item.action)}</div>
+                                <div class="text-gray-400">${t}</div>
+                            </div>
+                        </li>`;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        // โหลดรายชื่อสมาชิก (สำหรับ Admin)
+        async function loadMembers() {
+            if(!supabaseClient) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('rank, fname, lname, nickname, department, is_admin, is_friend')
+                    .order('created_at', { ascending: true });
+                if(error) throw error;
+
+                document.getElementById('member-count').textContent = `${data.length} คน`;
+                const list = document.getElementById('member-list');
+                list.innerHTML = data.length === 0 ? '<li class="py-2 text-gray-400 italic">ยังไม่มีสมาชิก</li>' : '';
+                data.forEach(u => {
+                    list.innerHTML += `
+                        <li class="py-2 flex justify-between items-center">
+                            <div class="min-w-0">
+                                <div class="font-medium truncate">${escapeHtml(u.rank || '')} ${escapeHtml(u.fname || '')} ${escapeHtml(u.lname || '')} <span class="text-gray-400">(${escapeHtml(u.nickname || '-')})</span></div>
+                                <div class="text-xs text-gray-500 truncate">${escapeHtml(u.department || '-')}</div>
+                            </div>
+                            <div class="flex gap-1 shrink-0 ml-2">
+                                ${u.is_admin ? '<span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Admin</span>' : ''}
+                                ${u.is_friend ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full" title="เพิ่มเพื่อน OA แล้ว"><i class="fab fa-line"></i></span>' : ''}
+                            </div>
+                        </li>`;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        // ป้องกัน XSS จากข้อมูลผู้ใช้
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
+        }
+
+        async function openWelfareEvent() {
+            const title = document.getElementById('admin-event-name').value;
+            if(!title) return Swal.fire('แจ้งเตือน', 'กรุณาตั้งชื่อกิจกรรม', 'warning');
+            
+            if(!supabaseClient) return Swal.fire('Mockup Mode', 'เปิดกิจกรรมเรียบร้อย', 'success');
+
+            try {
+                // ปิดอันเก่าก่อน
+                await supabaseClient.from('welfare_events').update({ status: 'closed' }).eq('status', 'open');
+                // สร้างอันใหม่
+                const { error } = await supabaseClient.from('welfare_events').insert({ title: title, status: 'open' });
+                if(error) throw error;
+
+                Swal.fire('สำเร็จ', 'เปิดรับรายการเรียบร้อยแล้ว', 'success');
+                document.getElementById('admin-event-name').value = '';
+                checkActiveWelfareEvent();
+            } catch(e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+        }
+
+        async function closeWelfareEvent() {
+            if(!supabaseClient) return Swal.fire('Mockup Mode', 'ปิดกิจกรรมเรียบร้อย', 'success');
+            try {
+                const { error } = await supabaseClient.from('welfare_events').update({ status: 'closed' }).eq('status', 'open');
+                if(error) throw error;
+                Swal.fire('สำเร็จ', 'ปิดรับรายการเรียบร้อยแล้ว', 'success');
+                checkActiveWelfareEvent();
+            } catch(e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+        }
+
+        async function summarizeOrders() {
+            if(!supabaseClient || !activeEventId) return Swal.fire('แจ้งเตือน', 'ไม่มีกิจกรรมที่กำลังเปิดอยู่', 'info');
+            
+            try {
+                const { data, error } = await supabaseClient.from('welfare_orders').select('menu, user_name').eq('event_id', activeEventId);
+                if(error) throw error;
+
+                // สรุปจำนวนแต่ละเมนู
+                let summary = {};
+                data.forEach(item => {
+                    const m = item.menu.trim();
+                    summary[m] = (summary[m] || 0) + 1;
+                });
+
+                let htmlContent = '<div class="text-left text-sm"><ul class="list-disc pl-5 mb-3">';
+                for (const [menu, count] of Object.entries(summary)) {
+                    htmlContent += `<li><b>${escapeHtml(menu)}</b> : ${count} แก้ว/ที่</li>`;
+                }
+                htmlContent += `</ul><hr><p class="mt-2 text-center font-bold">รวมทั้งหมด: ${data.length} รายการ</p></div>`;
+
+                Swal.fire({
+                    title: 'สรุปรายการสั่ง',
+                    html: htmlContent,
+                    confirmButtonText: 'ปิด'
+                });
+            } catch(e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+        }
+
+    </script>
+</body>
+</html>
