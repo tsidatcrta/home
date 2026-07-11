@@ -837,7 +837,7 @@
                     await checkUserInDB();
                     logActivity('login', 'เข้าสู่ระบบผ่าน LINE LIFF');
                 } else {
-                    liff.login({ redirectUri: LIFF_URL });
+                    liff.login({ redirectUri: window.location.href }); // เดิม { redirectUri: LIFF_URL } แก้ { redirectUri: window.location.href }
                     return;
                 }
             } catch (err) {
