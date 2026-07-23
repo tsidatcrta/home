@@ -60,7 +60,7 @@
       <p class="text-slate-500 font-medium text-xs sm:text-sm">กำลังเชื่อมต่อระบบยืนยันตัวตน...</p>
     </div>
 
-    <!-- 1. LOGIN GATEWAY (บังคับ LOGIN ก่อนเสมอ) -->
+    <!-- 1. LOGIN GATEWAY -->
     <div id="sectionLoginGateway" class="hidden bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 text-center my-6 max-w-md mx-auto space-y-5">
       <div class="w-16 h-16 bg-green-50 text-green-700 rounded-2xl flex items-center justify-center mx-auto text-2xl border border-green-200/60">
         <i class="fa-solid fa-user-lock"></i>
@@ -71,7 +71,6 @@
       </div>
 
       <div class="space-y-3 pt-2">
-        <!-- ปุ่มที่ 1: เข้าสู่ระบบด้วย LINE (หลัก) -->
         <button onclick="loginWithLine()" class="w-full py-3 bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center space-x-2">
           <i class="fa-brands fa-line text-lg"></i>
           <span>เข้าสู่ระบบด้วย LINE Account</span>
@@ -83,7 +82,6 @@
           <div class="flex-grow border-t border-slate-200"></div>
         </div>
 
-        <!-- ปุ่มที่ 2: เข้าสู่ระบบด้วยเบอร์โทรศัพท์ (สำรอง) -->
         <button onclick="showSection('sectionPhoneLogin')" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center space-x-2 border border-slate-200">
           <i class="fa-solid fa-phone text-slate-500"></i>
           <span>เข้าสู่ระบบด้วยเบอร์โทรศัพท์</span>
@@ -91,7 +89,7 @@
       </div>
     </div>
 
-    <!-- 1.1 FORM PHONE LOGIN (สำหรับผู้ไม่มี LINE) -->
+    <!-- 1.1 FORM PHONE LOGIN -->
     <div id="sectionPhoneLogin" class="hidden bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 max-w-md mx-auto space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
         <h3 class="font-bold text-slate-800 text-sm flex items-center">
@@ -128,7 +126,7 @@
       </button>
     </div>
 
-    <!-- 3. USER REGISTRATION FORM (เข้าหน้านี้เฉพาะเมื่อเช็กในชีตแล้วหาไม่เจอจริงๆ) -->
+    <!-- 3. USER REGISTRATION FORM -->
     <div id="sectionRegister" class="hidden bg-white p-5 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80">
       <div class="border-b pb-3 mb-4 flex items-center justify-between">
         <div>
@@ -393,7 +391,7 @@
   <!-- JAVASCRIPT CORE LOGIC -->
   <script>
     const LIFF_ID = "2010794688-WbZi5B3g";
-    const GAS_API_URL = "ใส่_WEB_APP_URL_ที่นี่"; // 🚨 ใส่ Web App URL ของพี่แม็กซ์ที่นี่
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby4OHJMO7WXyF9DA6RLvKDxU6-f2Ik7QKMyMDEAiBq6gCtv0zzo8c3rVloPXVyoRT729Q/exec";
 
     let currentUser = {
       lineUid: localStorage.getItem('trms_line_uid') || "",
@@ -407,6 +405,9 @@
     let activeCategoryFilter = 'ALL';
     let timerInterval = null;
 
+    /**
+     * Helper Function สำหรับเรียก API ไปยัง Google Apps Script (REST API)
+     */
     async function callGasApi(actionName, payloadData = {}) {
       try {
         const response = await fetch(GAS_API_URL, {
@@ -422,7 +423,7 @@
     }
 
     // ==========================================
-    // 1. INITIALIZATION ENGINE (แก้ไขระบบตรวจสิทธิ์ก่อนเปิดหน้าสมัคร)
+    // 1. INITIALIZATION ENGINE
     // ==========================================
     window.onload = async function() {
       showSection('sectionLoading');
@@ -431,92 +432,107 @@
         await liff.init({ liffId: LIFF_ID });
 
         if (liff.isLoggedIn()) {
-          // ✅ ดึง Profile LINE ให้เสร็จสมบูรณ์ก่อนเสมอ
-          const profile = await liff.getProfile();
-          currentUser.lineUid = profile.userId || "";
-          currentUser.displayName = profile.displayName || "LINE User";
-          currentUser.pictureUrl = profile.pictureUrl || currentUser.pictureUrl;
+          try {
+            const profile = await liff.getProfile();
+            currentUser.lineUid = profile.userId || "";
+            currentUser.displayName = profile.displayName || "LINE User";
+            currentUser.pictureUrl = profile.pictureUrl || currentUser.pictureUrl;
 
-          if (document.getElementById('user-avatar-header')) {
-            document.getElementById('user-avatar-header').src = currentUser.pictureUrl;
+            localStorage.setItem('trms_line_uid', currentUser.lineUid);
+
+            if (document.getElementById('user-avatar-header')) {
+              document.getElementById('user-avatar-header').src = currentUser.pictureUrl;
+            }
+            if (document.getElementById('regLineAvatar')) {
+              document.getElementById('regLineAvatar').src = currentUser.pictureUrl;
+            }
+          } catch (pErr) {
+            console.warn("LIFF Profile get failed:", pErr);
           }
 
-          // เมื่อได้ Line UID ชัวร์ๆ แล้ว ค่อยเรียกเช็กใน Google Sheets
-          if (currentUser.lineUid !== "") {
-            await checkUserInDB();
-          } else {
-            console.warn("Line UID is empty after getProfile");
-            showSection('sectionRegister');
-          }
+          await checkUserInDB();
 
         } else {
-          // ถ้าเปิดในแอป LINE แล้วยังไม่ล็อกอิน ให้สั่งล็อกอิน
+          // หากรันในแอป LINE ให้สั่งล็อกอินทันที
           if (liff.isInClient()) {
             liff.login();
           } else {
-            // โหมดทดสอบบน External Browser / PC
-            console.warn("External Browser Mode -> Mockup User");
-            currentUser.lineUid = "U123456789mockup";
-            currentUser.displayName = "Mock Tester";
-            await checkUserInDB();
+            // หากไม่มีสิทธิ์ LINE และไม่มีข้อมูลใน LocalStorage ให้เปิด Login Gateway
+            const savedPhone = localStorage.getItem('trms_user_phone') || "";
+            if (currentUser.lineUid !== "" || savedPhone !== "") {
+              await checkUserInDB();
+            } else {
+              showSection('sectionLoginGateway');
+            }
           }
         }
       } catch (err) {
         console.error("LIFF Init Exception:", err);
-        // กรณีเกิด Error ร้ายแรงใน LIFF ค่อยให้กรอกสมัคร
-        showSection('sectionRegister');
+        await checkUserInDB();
       }
     };
 
-    /**
-     * ค้นหาโปรไฟล์จาก Google Sheet ผ่าน Code.gs (แม่นยำ ไม่ส่งค่าว่าง)
-     */
-    function checkUserInDB() {
-      return new Promise((resolve) => {
-        // 🛡️ Guard: ถ้าไม่มี Line UID ไม่ให้ส่งไปค้นหา
-        if (!currentUser.lineUid || currentUser.lineUid.trim() === "") {
-          console.warn("checkUserInDB aborted: Line UID is empty");
-          showSection('sectionRegister');
-          resolve();
-          return;
+    function loginWithLine() {
+      if (typeof liff !== 'undefined') {
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        } else {
+          checkUserInDB();
         }
+      }
+    }
 
-        google.script.run
-          .withSuccessHandler(res => {
-            const subtitle = document.getElementById('headerSubtitle');
-            if (subtitle) {
-              subtitle.innerHTML = `<i class="fa-solid fa-circle-check text-[10px] text-green-300"></i><span>เชื่อมต่อระบบเรียบร้อย</span>`;
-            }
+    async function handlePhoneLogin(e) {
+      e.preventDefault();
+      const phoneInput = (document.getElementById('inputLoginPhone')?.value || "").trim();
+      if (!phoneInput) return;
 
-            if (res && res.status === "SUCCESS") {
-              dbUserProfile = res.data;
-              if (dbUserProfile.Status === "PENDING") {
-                document.getElementById('pendingName').innerText = dbUserProfile.Full_Name_Display || '-';
-                document.getElementById('pendingUnit').innerText = dbUserProfile.Primary_Unit || '-';
-                document.getElementById('pendingTime').innerText = dbUserProfile.Registered_At || '-';
-                showSection('sectionPending');
-              } else if (dbUserProfile.Status === "ACTIVE") {
-                setupUserDashboard(); // ✅ สมาชิก ACTIVE ให้พาเข้า Dashboard
-              } else {
-                showSection('sectionRegister');
-              }
-            } else {
-              // หาไม่เจอจริง ค่อยพาไปหน้าสมัคร
-              showSection('sectionRegister');
-            }
-            resolve();
-          })
-          .withFailureHandler(err => {
-            console.error("checkUserInDB Backend Error:", err);
-            showSection('sectionRegister');
-            resolve();
-          })
-          .checkUserProfile(currentUser.lineUid, "");
+      Swal.fire({ title: 'กำลังตรวจสอบสิทธิ์...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      localStorage.setItem('trms_user_phone', phoneInput);
+
+      await checkUserInDB();
+      Swal.close();
+    }
+
+    /**
+     * ตรวจสอบสิทธิ์ผู้ใช้งานจาก Database
+     */
+    async function checkUserInDB() {
+      const savedPhone = localStorage.getItem('trms_user_phone') || "";
+
+      const res = await callGasApi("checkUserProfile", {
+        lineUserId: currentUser.lineUid || "",
+        phoneNumber: savedPhone
       });
+
+      const subtitle = document.getElementById('headerSubtitle');
+      if (subtitle) {
+        subtitle.innerHTML = `<i class="fa-solid fa-circle-check text-[10px] text-green-300"></i><span>เชื่อมต่อระบบเรียบร้อย</span>`;
+      }
+
+      if (res && res.status === "SUCCESS") {
+        dbUserProfile = res.data;
+        if (dbUserProfile.Line_User_ID) currentUser.lineUid = dbUserProfile.Line_User_ID;
+        if (dbUserProfile.Phone_Number) localStorage.setItem('trms_user_phone', dbUserProfile.Phone_Number);
+
+        if (dbUserProfile.Status === "PENDING") {
+          document.getElementById('pendingName').innerText = dbUserProfile.Full_Name_Display || '-';
+          document.getElementById('pendingUnit').innerText = dbUserProfile.Primary_Unit || '-';
+          document.getElementById('pendingTime').innerText = dbUserProfile.Registered_At || '-';
+          showSection('sectionPending');
+        } else if (dbUserProfile.Status === "ACTIVE") {
+          setupUserDashboard();
+        } else {
+          showSection('sectionRegister');
+        }
+      } else {
+        // หากไม่พบข้อมูลผู้ใช้ในระบบเลย ให้ไปหน้าสมัครสมาชิกใหม่
+        showSection('sectionRegister');
+      }
     }
 
     // ==========================================
-    // 2. DASHBOARD & FORM ENGINE LOGIC
+    // 2. REGISTRATION & DASHBOARD LOGIC
     // ==========================================
     function toggleUserTypeForm() {
       const userType = document.querySelector('input[name="userTypeGroup"]:checked').value;
@@ -554,13 +570,15 @@
       }
     }
 
-function handleRegister(e) {
+    async function handleRegister(e) {
       e.preventDefault();
       Swal.fire({ title: 'กำลังบันทึกข้อมูลลงทะเบียน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-      // ดักจับ userTypeGroup แบบปลอดภัย
       const userTypeEl = document.querySelector('input[name="userTypeGroup"]:checked');
       const userTypeGroup = userTypeEl ? userTypeEl.value : 'UNIT';
+      const phoneVal = (document.getElementById('regPhone')?.value || "").trim();
+
+      if (phoneVal) localStorage.setItem('trms_user_phone', phoneVal);
 
       const formData = {
         userTypeGroup: userTypeGroup,
@@ -572,34 +590,28 @@ function handleRegister(e) {
         lastName: (document.getElementById('regLastName')?.value || "").trim(),
         position: (document.getElementById('regPosition')?.value || "").trim(),
         trainingPosition: (userTypeGroup === 'STAFF') ? "เจ้าหน้าที่ส่วนกลาง" : (document.getElementById('regTrainingPosition')?.value || "-"),
-        phoneNumber: (document.getElementById('regPhone')?.value || "").trim(),
+        phoneNumber: phoneVal,
         category: (userTypeGroup === 'STAFF') ? "ส่วนกลาง" : (document.getElementById('regCategory')?.value || "-"),
         parentHq: (userTypeGroup === 'STAFF') ? "นขต.ทบ." : (document.getElementById('regParentHq')?.value || "-"),
         primaryUnit: (userTypeGroup === 'STAFF') ? "ยศ.ทบ." : (document.getElementById('regUnit')?.value || "ส่วนกลาง"),
         level: document.getElementById('regLevel')?.value || "U"
       };
 
-      google.script.run
-        .withSuccessHandler(res => {
-          Swal.close();
-          if (res && res.status === "SUCCESS") {
-            Swal.fire({
-              icon: 'success',
-              title: 'ลงทะเบียนสำเร็จ!',
-              text: res.message,
-              confirmButtonText: 'ตกลง'
-            }).then(() => {
-              window.location.reload();
-            });
-          } else {
-            Swal.fire('เกิดข้อผิดพลาด', res ? res.message : 'ไม่สามารถบันทึกข้อมูลได้', 'error');
-          }
-        })
-        .withFailureHandler(err => {
-          Swal.close();
-          Swal.fire('เกิดข้อผิดพลาดระบบ', err.toString(), 'error');
-        })
-        .registerNewUser(formData);
+      const res = await callGasApi("registerNewUser", { formData: formData });
+
+      Swal.close();
+      if (res && res.status === "SUCCESS") {
+        Swal.fire({
+          icon: 'success',
+          title: 'ลงทะเบียนสำเร็จ!',
+          text: res.message,
+          confirmButtonText: 'ตกลง'
+        }).then(() => {
+          window.location.reload();
+        });
+      } else {
+        Swal.fire('เกิดข้อผิดพลาด', res ? res.message : 'ไม่สามารถลงทะเบียนได้', 'error');
+      }
     }
 
     function setupUserDashboard() {
@@ -648,7 +660,7 @@ function handleRegister(e) {
       const res = await callGasApi("updateUserProfile", { updateData: updateData });
 
       Swal.close();
-      if (res.status === "SUCCESS") {
+      if (res && res.status === "SUCCESS") {
         Swal.fire('สำเร็จ', res.message, 'success').then(() => {
           closeEditProfileModal();
           checkUserInDB();
@@ -806,7 +818,7 @@ function handleRegister(e) {
       const res = await callGasApi("getFormSchema", { targetSheet: formCode });
       
       Swal.close();
-      if (res.status !== "SUCCESS") return Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+      if (!res || res.status !== "SUCCESS") return Swal.fire('เกิดข้อผิดพลาด', res ? res.message : 'ไม่พบโครงสร้างแบบฟอร์ม', 'error');
 
       const container = document.getElementById('dynamicQuestionsContainer');
       container.innerHTML = '';
@@ -874,11 +886,11 @@ function handleRegister(e) {
       const res = await callGasApi("submitFormPayload", { payload: payload });
 
       Swal.close();
-      if (res.status === "SUCCESS") {
+      if (res && res.status === "SUCCESS") {
         Swal.fire({ icon: 'success', title: 'สำเร็จ', text: res.message, confirmButtonText: 'ตกลง' })
              .then(() => backToDashboard());
       } else {
-        Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+        Swal.fire('เกิดข้อผิดพลาด', res ? res.message : 'ไม่สามารถบันทึกข้อมูลได้', 'error');
       }
     }
 
