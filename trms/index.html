@@ -34,8 +34,12 @@
   <header id="mainHeader" class="header-u text-white p-4 shadow-sm sticky top-0 z-50 transition-all duration-300">
     <div class="max-w-4xl mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-3">
-        <div class="p-2 bg-white/10 rounded-xl backdrop-blur-sm">
-          <i class="fa-solid fa-shield-halved text-2xl text-white"></i>
+        <!-- 💡 ย้ายตำแหน่ง Line_Profile มาแทนที่ตำแหน่งโล่ด้านบนซ้าย -->
+        <div id="headerAvatarContainer" class="relative flex-shrink-0">
+          <div id="shieldIcon" class="p-2 bg-white/10 rounded-xl backdrop-blur-sm flex items-center justify-center">
+            <i class="fa-solid fa-shield-halved text-2xl text-white"></i>
+          </div>
+          <img id="lineAvatarHeader" src="" class="hidden w-10 h-10 rounded-xl object-cover border-2 border-white/80 shadow-md">
         </div>
         <div>
           <h1 class="font-bold text-base sm:text-lg leading-tight" id="headerTitle">TRMS ระบบบริหารจัดการทหารใหม่</h1>
@@ -45,9 +49,13 @@
           </p>
         </div>
       </div>
-      <span id="levelBadge" class="hidden px-3 py-1 text-xs font-bold rounded-full bg-white text-green-800 shadow-sm border border-green-200">
-        U
-      </span>
+      <div class="flex items-center space-x-2">
+        <span id="levelBadge" class="hidden px-3 py-1 text-xs font-bold rounded-full bg-white text-green-800 shadow-sm border border-green-200">U</span>
+        <!-- ปุ่ม Logout LINE -->
+        <button id="btnLogoutLine" onclick="logoutLine()" class="hidden px-2.5 py-1 text-xs font-bold rounded-xl bg-red-500/20 hover:bg-red-500/40 text-white border border-white/30 transition flex items-center">
+          <i class="fa-solid fa-right-from-bracket mr-1"></i>ออก
+        </button>
+      </div>
     </div>
   </header>
 
@@ -89,22 +97,26 @@
       </div>
     </div>
 
-    <!-- 1.1 FORM PHONE LOGIN -->
+    <!-- 1.1 FORM PHONE LOGIN & REGISTER -->
     <div id="sectionPhoneLogin" class="hidden bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 max-w-md mx-auto space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
         <h3 class="font-bold text-slate-800 text-sm flex items-center">
-          <i class="fa-solid fa-mobile-screen text-green-700 mr-2"></i>เข้าสู่ระบบด้วยเบอร์โทรศัพท์
+          <i class="fa-solid fa-mobile-screen text-green-700 mr-2"></i>เข้าระบบ / สมัครด้วยเบอร์โทร
         </h3>
         <button onclick="showSection('sectionLoginGateway')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
       <form onsubmit="handlePhoneLogin(event)" class="space-y-3">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">เบอร์โทรศัพท์ที่เคยลงทะเบียน *</label>
-          <input type="tel" id="inputLoginPhone" required placeholder="0812345678" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+          <label class="block text-xs font-bold text-slate-700 mb-1">เบอร์โทรศัพท์ *</label>
+          <input type="tel" id="inputLoginPhone" required placeholder="0812345678" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">รหัสผ่าน (Password) *</label>
+          <input type="password" id="inputLoginPass" required placeholder="ระบุรหัสผ่าน" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50">
         </div>
         <button type="submit" class="w-full py-2.5 bg-green-700 text-white font-bold text-xs rounded-xl shadow-md hover:bg-green-800 transition">
-          <i class="fa-solid fa-right-to-bracket mr-1.5"></i>ตรวจสอบสิทธิ์
+          <i class="fa-solid fa-right-to-bracket mr-1.5"></i>เข้าสู่ระบบ (จำกัดสิทธิ์)
         </button>
       </form>
     </div>
@@ -126,16 +138,13 @@
       </button>
     </div>
 
-    <!-- 3. USER REGISTRATION FORM -->
+    <!-- 3. USER REGISTRATION FORM (สำหรับ LINE User ใหม่) -->
     <div id="sectionRegister" class="hidden bg-white p-5 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80">
-      <div class="border-b pb-3 mb-4 flex items-center justify-between">
-        <div>
-          <h2 class="text-lg font-bold text-slate-800 flex items-center">
-            <i class="fa-solid fa-user-plus text-green-700 mr-2.5"></i>ลงทะเบียนผู้ใช้งานใหม่
-          </h2>
-          <p class="text-xs text-slate-500 mt-0.5">ไม่พบข้อมูลในระบบ กรุณากรอกข้อมูลส่วนตัวเพื่อขอสิทธิ์เข้าใช้งาน</p>
-        </div>
-        <img id="regLineAvatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-12 h-12 rounded-2xl border border-slate-200 object-cover">
+      <div class="border-b pb-3 mb-4">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center">
+          <i class="fa-solid fa-user-plus text-green-700 mr-2.5"></i>ลงทะเบียนผู้ใช้งานใหม่ (ผูก LINE)
+        </h2>
+        <p class="text-xs text-slate-500 mt-0.5">ไม่พบข้อมูลในระบบ กรุณากรอกข้อมูลส่วนตัวเพื่อขอสิทธิ์เข้าใช้งาน</p>
       </div>
 
       <form id="formRegister" onsubmit="handleRegister(event)" class="space-y-4">
@@ -256,15 +265,11 @@
       </form>
     </div>
 
-    <!-- 4. DASHBOARD -->
+    <!-- 4. DASHBOARD (เฉพาะ LINE User ที่ผ่านการอนุมัติ) -->
     <div id="sectionDashboard" class="hidden space-y-4">
       <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div class="flex items-center space-x-3.5">
-            <div class="relative">
-              <img id="user-avatar-header" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Avatar" class="w-12 h-12 rounded-2xl object-cover border-2 border-slate-200/80 shadow-sm">
-              <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
-            </div>
             <div>
               <div class="flex items-center space-x-2">
                 <h3 class="font-bold text-slate-800 text-sm sm:text-base" id="userDisplayName">-</h3>
@@ -396,7 +401,7 @@
     let currentUser = {
       lineUid: localStorage.getItem('trms_line_uid') || "",
       displayName: "",
-      pictureUrl: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+      pictureUrl: ""
     };
     let dbUserProfile = null;
     let currentRoleContext = 'U';
@@ -433,29 +438,20 @@
             const profile = await liff.getProfile();
             currentUser.lineUid = profile.userId || "";
             currentUser.displayName = profile.displayName || "LINE User";
-            currentUser.pictureUrl = profile.pictureUrl || currentUser.pictureUrl;
+            currentUser.pictureUrl = profile.pictureUrl || "";
 
             localStorage.setItem('trms_line_uid', currentUser.lineUid);
-
-            if (document.getElementById('user-avatar-header')) {
-              document.getElementById('user-avatar-header').src = currentUser.pictureUrl;
-            }
-            if (document.getElementById('regLineAvatar')) {
-              document.getElementById('regLineAvatar').src = currentUser.pictureUrl;
-            }
+            updateHeaderAvatar(currentUser.pictureUrl);
           } catch (pErr) {
             console.warn("LIFF Profile get failed:", pErr);
           }
 
-          // เมื่ออยู่ในแอป LINE และดึงสิทธิ์สำเร็จ ให้ค้นหาโปรไฟล์ทันที
           await checkUserInDB();
 
         } else {
-          // หากเปิดบน LINE Client แล้วยังไม่ล็อกอิน ให้สั่งล็อกอินอัตโนมัติ
           if (liff.isInClient()) {
             liff.login();
           } else {
-            // หากเปิดบน PC/Browser ภายนอก และมี Cache LINE ID หรือ เบอร์โทร ให้ลองค้นหาเลย
             const savedPhone = localStorage.getItem('trms_user_phone') || "";
             if (currentUser.lineUid !== "" || savedPhone !== "") {
               await checkUserInDB();
@@ -475,6 +471,26 @@
       }
     };
 
+    /**
+     * สลับตำแหน่งรูป Avatar LINE ขึ้นที่มุมซ้ายบน Header แทนโล่
+     */
+    function updateHeaderAvatar(url) {
+      const shield = document.getElementById('shieldIcon');
+      const avatar = document.getElementById('lineAvatarHeader');
+      const logoutBtn = document.getElementById('btnLogoutLine');
+
+      if (url && url !== "") {
+        shield.classList.add('hidden');
+        avatar.src = url;
+        avatar.classList.remove('hidden');
+        if (logoutBtn) logoutBtn.classList.remove('hidden');
+      } else {
+        shield.classList.remove('hidden');
+        avatar.classList.add('hidden');
+        if (logoutBtn) logoutBtn.classList.add('hidden');
+      }
+    }
+
     function loginWithLine() {
       if (typeof liff !== 'undefined') {
         if (!liff.isLoggedIn()) {
@@ -485,21 +501,52 @@
       }
     }
 
+    function logoutLine() {
+      Swal.fire({
+        title: 'ออกจากระบบ LINE?',
+        text: 'ท่านต้องการออกจากระบบจากบัญชี LINE นี้หรือไม่',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ออกจากระบบ',
+        cancelButtonText: 'ยกเลิก'
+      }).then((res) => {
+        if (res.isConfirmed) {
+          localStorage.removeItem('trms_line_uid');
+          localStorage.removeItem('trms_user_phone');
+          if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+            liff.logout();
+          }
+          window.location.reload();
+        }
+      });
+    }
+
     async function handlePhoneLogin(e) {
       e.preventDefault();
       const phoneInput = (document.getElementById('inputLoginPhone')?.value || "").trim();
+      const passInput = (document.getElementById('inputLoginPass')?.value || "").trim();
       if (!phoneInput) return;
 
-      Swal.fire({ title: 'กำลังตรวจสอบสิทธิ์...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-      localStorage.setItem('trms_user_phone', phoneInput);
+      Swal.fire({ title: 'กำลัง ตรวจสอบสิทธิ์...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-      await checkUserInDB();
+      const res = await callGasApi("loginWithPhone", { phoneNumber: phoneInput, password: passInput });
       Swal.close();
+
+      if (res && res.status === "SUCCESS") {
+        localStorage.setItem('trms_user_phone', phoneInput);
+        dbUserProfile = res.data;
+        Swal.fire({
+          icon: 'info',
+          title: 'เข้าสู่ระบบแล้ว (บัญชีเบอร์โทร)',
+          text: 'บัญชีเบอร์โทรศัพท์จำกัดสิทธิ์ใช้งาน ไม่สามารถเข้าหน้า Dashboard รายงานผลได้',
+          confirmButtonText: 'ตกลง'
+        });
+        showSection('sectionPending'); // หรือหน้าที่จัดไว้เฉพาะบัญชีเบอร์โทร
+      } else {
+        Swal.fire('เข้าสู่ระบบไม่สำเร็จ', res ? res.message : 'ไม่พบข้อมูล', 'error');
+      }
     }
 
-    /**
-     * ตรวจสอบสิทธิ์ผู้ใช้งานจาก Database
-     */
     async function checkUserInDB() {
       const savedPhone = localStorage.getItem('trms_user_phone') || "";
 
@@ -518,6 +565,13 @@
         if (dbUserProfile.Line_User_ID) currentUser.lineUid = dbUserProfile.Line_User_ID;
         if (dbUserProfile.Phone_Number) localStorage.setItem('trms_user_phone', dbUserProfile.Phone_Number);
 
+        // หากเป็นผู้ใช้เบอร์โทรปกติ ป้องกันไม่ให้เข้า Dashboard
+        if (dbUserProfile.AuthType === 'PHONE' || dbUserProfile.Level === 'NONE') {
+          Swal.fire('ข้อจำกัดสิทธิ์', 'บัญชีเบอร์โทรศัพท์ไม่มีสิทธิ์เข้าใช้งานหน้า Dashboard บันทึกรายงาน', 'warning');
+          showSection('sectionPending');
+          return;
+        }
+
         if (dbUserProfile.Status === "PENDING") {
           document.getElementById('pendingName').innerText = dbUserProfile.Full_Name_Display || '-';
           document.getElementById('pendingUnit').innerText = dbUserProfile.Primary_Unit || '-';
@@ -529,7 +583,7 @@
           showSection('sectionRegister');
         }
       } else {
-        // หากค้นหาด้วย LINE ID และเบอร์โทรแล้วไม่พบในชีตจริง จึงเปิดหน้าสมัครใหม่
+        // หากสแกน LINE แล้วยังไม่เคยลงทะเบียน ให้พาไปหน้าสมัครสมาชิกใหม่
         showSection('sectionRegister');
       }
     }
