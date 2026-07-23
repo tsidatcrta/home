@@ -925,16 +925,16 @@
 
       const lvl = dbUserProfile.Level || 'U';
       if (lvl === 'SA') {
-        el.innerText = '👑 สิทธิ์การรายงาน: ผู้ดูแลระบบสูงสุด (Super Admin)';
+        el.innerText = '👑 ผู้ดูแลระบบสูงสุด (Super Admin)';
         el.className = 'inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-amber-950 shadow-xs';
       } else if (lvl === 'A') {
-        el.innerText = '👑 สิทธิ์การรายงาน: เจ้าหน้าที่ส่วนกลาง (Admin)';
+        el.innerText = '👑 เจ้าหน้าที่ส่วนกลาง (Admin)';
         el.className = 'inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-300 text-amber-950 shadow-xs';
       } else if (lvl.includes('H')) {
-        el.innerText = '🟥 สิทธิ์การรายงาน: ระดับ ทภ. / นขต. (H)';
+        el.innerText = '🟥 ระดับ ทภ./นขต.ทบ. (HQ)';
         el.className = 'inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-200 text-rose-950 shadow-xs';
       } else {
-        el.innerText = '🟩 สิทธิ์การรายงาน: ระดับ หน่วยฝึก (U)';
+        el.innerText = '🟩 ระดับหน่วยฝึก (Unit)';
         el.className = 'inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-950 shadow-xs';
       }
     }
