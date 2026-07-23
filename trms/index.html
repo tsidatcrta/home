@@ -609,40 +609,6 @@ function handleRegister(e) {
         .registerNewUser(formData);
     }
 
-      const formData = {
-        userTypeGroup: userTypeGroup,
-        lineUserId: currentUser.lineUid || localStorage.getItem('trms_line_uid') || "",
-        lineIdName: currentUser.displayName || "LINE User",
-        customLineId: document.getElementById('regCustomLine').value,
-        rank: document.getElementById('regRank').value,
-        firstName: document.getElementById('regFirstName').value,
-        lastName: document.getElementById('regLastName').value,
-        position: document.getElementById('regPosition').value,
-        trainingPosition: (userTypeGroup === 'STAFF') ? "เจ้าหน้าที่ส่วนกลาง" : document.getElementById('regTrainingPosition').value,
-        phoneNumber: phoneNum,
-        category: (userTypeGroup === 'STAFF') ? "ส่วนกลาง" : document.getElementById('regCategory').value,
-        parentHq: (userTypeGroup === 'STAFF') ? "นขต.ทบ." : document.getElementById('regParentHq').value,
-        primaryUnit: (userTypeGroup === 'STAFF') ? "ยศ.ทบ." : document.getElementById('regUnit').value,
-        level: document.getElementById('regLevel').value
-      };
-
-      const res = await callGasApi("registerNewUser", { formData: formData });
-
-      Swal.close();
-      if (res.status === "SUCCESS") {
-        Swal.fire({
-          icon: 'success',
-          title: 'ลงทะเบียนสำเร็จ!',
-          text: res.message,
-          confirmButtonText: 'ตกลง'
-        }).then(() => {
-          window.location.reload();
-        });
-      } else {
-        Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
-      }
-    }
-
     function setupUserDashboard() {
       document.getElementById('userDisplayName').innerText = dbUserProfile.Full_Name_Display;
       document.getElementById('userPosition').innerText = dbUserProfile.Position;
