@@ -561,17 +561,53 @@
       }
     }
 
-    async function handleRegister(e) {
+function handleRegister(e) {
       e.preventDefault();
       Swal.fire({ title: 'กำลังบันทึกข้อมูลลงทะเบียน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-      const userTypeGroup = document.querySelector('input[name="userTypeGroup"]:checked').value;
-      const phoneNum = document.getElementById('regPhone').value;
+      // ดักจับ userTypeGroup แบบปลอดภัย
+      const userTypeEl = document.querySelector('input[name="userTypeGroup"]:checked');
+      const userTypeGroup = userTypeEl ? userTypeEl.value : 'UNIT';
 
-      localStorage.setItem('trms_user_phone', phoneNum);
-      if (currentUser.lineUid) {
-        localStorage.setItem('trms_line_uid', currentUser.lineUid);
-      }
+      const formData = {
+        userTypeGroup: userTypeGroup,
+        lineUserId: currentUser.lineUid || "",
+        lineIdName: currentUser.displayName || "LINE User",
+        customLineId: (document.getElementById('regCustomLine')?.value || "").trim(),
+        rank: document.getElementById('regRank')?.value || "",
+        firstName: (document.getElementById('regFirstName')?.value || "").trim(),
+        lastName: (document.getElementById('regLastName')?.value || "").trim(),
+        position: (document.getElementById('regPosition')?.value || "").trim(),
+        trainingPosition: (userTypeGroup === 'STAFF') ? "เจ้าหน้าที่ส่วนกลาง" : (document.getElementById('regTrainingPosition')?.value || "-"),
+        phoneNumber: (document.getElementById('regPhone')?.value || "").trim(),
+        category: (userTypeGroup === 'STAFF') ? "ส่วนกลาง" : (document.getElementById('regCategory')?.value || "-"),
+        parentHq: (userTypeGroup === 'STAFF') ? "นขต.ทบ." : (document.getElementById('regParentHq')?.value || "-"),
+        primaryUnit: (userTypeGroup === 'STAFF') ? "ยศ.ทบ." : (document.getElementById('regUnit')?.value || "ส่วนกลาง"),
+        level: document.getElementById('regLevel')?.value || "U"
+      };
+
+      google.script.run
+        .withSuccessHandler(res => {
+          Swal.close();
+          if (res && res.status === "SUCCESS") {
+            Swal.fire({
+              icon: 'success',
+              title: 'ลงทะเบียนสำเร็จ!',
+              text: res.message,
+              confirmButtonText: 'ตกลง'
+            }).then(() => {
+              window.location.reload();
+            });
+          } else {
+            Swal.fire('เกิดข้อผิดพลาด', res ? res.message : 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+          }
+        })
+        .withFailureHandler(err => {
+          Swal.close();
+          Swal.fire('เกิดข้อผิดพลาดระบบ', err.toString(), 'error');
+        })
+        .registerNewUser(formData);
+    }
 
       const formData = {
         userTypeGroup: userTypeGroup,
