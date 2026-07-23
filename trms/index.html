@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRMS ระบบบริหารจัดการทหารใหม่</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- LINE LIFF SDK -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+    
+    .btn-u { background-color: #15803d; } .btn-u:hover { background-color: #166534; }
+    .btn-h { background-color: #b91c1c; } .btn-h:hover { background-color: #991b1b; }
+    .header-u { background: linear-gradient(135deg, #15803d, #166534); }
+    .header-h { background: linear-gradient(135deg, #b91c1c, #991b1b); }
+
+    .minimal-card { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    .minimal-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-12 antialiased">
+
+  <!-- TOP HEADER BAR -->
+  <header id="mainHeader" class="header-u text-white p-4 shadow-sm sticky top-0 z-50 transition-all duration-300">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-white/10 rounded-xl backdrop-blur-sm">
+          <i class="fa-solid fa-shield-halved text-2xl text-white"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-base sm:text-lg leading-tight" id="headerTitle">TRMS ระบบบริหารจัดการทหารใหม่</h1>
+          <p class="text-xs text-green-100 flex items-center space-x-1" id="headerSubtitle">
+            <i class="fa-solid fa-circle-notch fa-spin text-[10px]"></i>
+            <span>กำลังยืนยันตัวตน...</span>
+          </p>
+        </div>
+      </div>
+      <span id="levelBadge" class="hidden px-3 py-1 text-xs font-bold rounded-full bg-white text-green-800 shadow-sm border border-green-200">
+        U
+      </span>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-4xl mx-auto p-4 sm:p-6 space-y-5">
+
+    <!-- 0. LOADING STATE -->
+    <div id="sectionLoading" class="text-center py-20 bg-white rounded-3xl shadow-sm border border-slate-200/80 my-4">
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-green-700 mb-3"></i>
+      <p class="text-slate-500 font-medium text-xs sm:text-sm">กำลังเชื่อมต่อระบบยืนยันตัวตน...</p>
+    </div>
+
+    <!-- 1. LOGIN GATEWAY (บังคับ LOGIN ก่อนเสมอ) -->
+    <div id="sectionLoginGateway" class="hidden bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 text-center my-6 max-w-md mx-auto space-y-5">
+      <div class="w-16 h-16 bg-green-50 text-green-700 rounded-2xl flex items-center justify-center mx-auto text-2xl border border-green-200/60">
+        <i class="fa-solid fa-user-lock"></i>
+      </div>
+      <div>
+        <h2 class="text-lg font-bold text-slate-800">กรุณาเข้าสู่ระบบ</h2>
+        <p class="text-xs text-slate-500 mt-1">เลือกช่องทางการเข้าใช้งานเพื่อตรวจสอบสิทธิ์ในระบบ</p>
+      </div>
+
+      <div class="space-y-3 pt-2">
+        <!-- ปุ่มที่ 1: เข้าสู่ระบบด้วย LINE (หลัก) -->
+        <button onclick="loginWithLine()" class="w-full py-3 bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+          <i class="fa-brands fa-line text-lg"></i>
+          <span>เข้าสู่ระบบด้วย LINE Account</span>
+        </button>
+
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-slate-200"></div>
+          <span class="flex-shrink mx-3 text-[11px] text-slate-400 font-medium">หรือ (กรณีไม่มีแอป LINE)</span>
+          <div class="flex-grow border-t border-slate-200"></div>
+        </div>
+
+        <!-- ปุ่มที่ 2: เข้าสู่ระบบด้วยเบอร์โทรศัพท์ (สำรอง) -->
+        <button onclick="showSection('sectionPhoneLogin')" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center space-x-2 border border-slate-200">
+          <i class="fa-solid fa-phone text-slate-500"></i>
+          <span>เข้าสู่ระบบด้วยเบอร์โทรศัพท์</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 1.1 FORM PHONE LOGIN (สำหรับผู้ไม่มี LINE) -->
+    <div id="sectionPhoneLogin" class="hidden bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 max-w-md mx-auto space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-slate-800 text-sm flex items-center">
+          <i class="fa-solid fa-mobile-screen text-green-700 mr-2"></i>เข้าสู่ระบบด้วยเบอร์โทรศัพท์
+        </h3>
+        <button onclick="showSection('sectionLoginGateway')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <form onsubmit="handlePhoneLogin(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">เบอร์โทรศัพท์ที่เคยลงทะเบียน *</label>
+          <input type="tel" id="inputLoginPhone" required placeholder="0812345678" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+        </div>
+        <button type="submit" class="w-full py-2.5 bg-green-700 text-white font-bold text-xs rounded-xl shadow-md hover:bg-green-800 transition">
+          <i class="fa-solid fa-right-to-bracket mr-1.5"></i>ตรวจสอบสิทธิ์
+        </button>
+      </form>
+    </div>
+
+    <!-- 2. PENDING STATE -->
+    <div id="sectionPending" class="hidden bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 text-center my-6 max-w-md mx-auto">
+      <div class="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl border border-amber-200/60">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+      </div>
+      <h2 class="text-lg font-bold text-slate-800 mb-1">อยู่ระหว่างรอการอนุมัติสิทธิ์</h2>
+      <p class="text-slate-500 text-xs mb-4">ข้อมูลการลงทะเบียนส่งถึงผู้ดูแลระบบแล้ว กรุณารอการตรวจสอบสิทธิ์จาก Admin</p>
+      <div class="bg-slate-50 p-3.5 rounded-xl text-left text-xs text-slate-600 space-y-1.5 mb-5 border border-slate-200/60">
+        <p><strong>ชื่อ-สกุล:</strong> <span id="pendingName">-</span></p>
+        <p><strong>หน่วยงาน:</strong> <span id="pendingUnit">-</span></p>
+        <p><strong>เวลาที่สมัคร:</strong> <span id="pendingTime">-</span></p>
+      </div>
+      <button onclick="window.location.reload()" class="w-full py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition text-xs">
+        <i class="fa-solid fa-arrows-rotate mr-2"></i>รีเฟรช ตรวจสอบสถานะ
+      </button>
+    </div>
+
+    <!-- 3. USER REGISTRATION FORM (เข้าหน้านี้เฉพาะเมื่อเช็กในชีตแล้วหาไม่เจอจริงๆ) -->
+    <div id="sectionRegister" class="hidden bg-white p-5 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80">
+      <div class="border-b pb-3 mb-4 flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 flex items-center">
+            <i class="fa-solid fa-user-plus text-green-700 mr-2.5"></i>ลงทะเบียนผู้ใช้งานใหม่
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">ไม่พบข้อมูลในระบบ กรุณากรอกข้อมูลส่วนตัวเพื่อขอสิทธิ์เข้าใช้งาน</p>
+        </div>
+        <img id="regLineAvatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-12 h-12 rounded-2xl border border-slate-200 object-cover">
+      </div>
+
+      <form id="formRegister" onsubmit="handleRegister(event)" class="space-y-4">
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">ประเภทผู้ใช้งาน *</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center p-2.5 border rounded-xl bg-white cursor-pointer text-xs font-semibold hover:border-green-500 transition shadow-xs">
+              <input type="radio" name="userTypeGroup" value="UNIT" checked onchange="toggleUserTypeForm()" class="mr-2 text-green-600 focus:ring-green-500">
+              หน่วยฝึก / ผู้จัดการฝึก
+            </label>
+            <label class="flex items-center p-2.5 border rounded-xl bg-white cursor-pointer text-xs font-semibold hover:border-green-500 transition shadow-xs">
+              <input type="radio" name="userTypeGroup" value="STAFF" onchange="toggleUserTypeForm()" class="mr-2 text-green-600 focus:ring-green-500">
+              เจ้าหน้าที่ส่วนกลาง / Admin
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">ยศ *</label>
+            <select id="regRank" required class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+              <option value="">-- เลือกยศ --</option>
+              <option value="พลเอก">พลเอก</option><option value="พลโท">พลโท</option><option value="พลตรี">พลตรี</option>
+              <option value="พ.อ.">พ.อ.</option><option value="พ.ท.">พ.ท.</option><option value="พ.ต.">พ.ต.</option>
+              <option value="ร.อ.">ร.อ.</option><option value="ร.ท.">ร.ท.</option><option value="ร.ต.">ร.ต.</option>
+              <option value="จ.ส.อ.">จ.ส.อ.</option><option value="จ.ส.ท.">จ.ส.ท.</option><option value="จ.ส.ต.">จ.ส.ต.</option>
+              <option value="ส.อ.">ส.อ.</option><option value="ส.ท.">ส.ท.</option><option value="ส.ต.">ส.ต.</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อ *</label>
+            <input type="text" id="regFirstName" required placeholder="สมชาย" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">นามสกุล *</label>
+            <input type="text" id="regLastName" required placeholder="ใจดี" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">ตำแหน่งปกติ (ตาม ชกท.) *</label>
+            <input type="text" id="regPosition" required placeholder="เช่น ผบ.ร้อย.ฝรพ.1 หรือ เสมียน ยศ.ทบ." class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+          </div>
+          <div id="fieldTrainingPosition">
+            <label class="block text-xs font-bold text-slate-700 mb-1">ตำแหน่งในการฝึก *</label>
+            <select id="regTrainingPosition" required class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+              <option value="">-- เลือกตำแหน่งฝึก --</option>
+              <option value="01 : ผู้อำนวยการฝึก (ผบ.หน่วย)">01 : ผู้อำนวยการฝึก (ผบ.หน่วย)</option>
+              <option value="02 : ฝ่ายยุทธการของหน่วย">02 : ฝ่ายยุทธการของหน่วย</option>
+              <option value="03 : ผบ.หน่วยฝึกทหารใหม่">03 : ผบ.หน่วยฝึกทหารใหม่</option>
+              <option value="04 : ผู้ฝึกทหารใหม่">04 : ผู้ฝึกทหารใหม่</option>
+              <option value="05 : ผู้ช่วยผู้ฝึกทหารใหม่">05 : ผู้ช่วยผู้ฝึกทหารใหม่</option>
+              <option value="06 : ครูนายสิบ">06 : ครูนายสิบ</option>
+              <option value="07 : ครูทหารใหม่">07 : ครูทหารใหม่</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">เบอร์โทรศัพท์ *</label>
+            <input type="tel" id="regPhone" required placeholder="0812345678" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">LINE ID (ถ้ามี / ไม่บังคับ)</label>
+            <input type="text" id="regCustomLine" placeholder="line_id" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+          </div>
+        </div>
+
+        <div id="unitFieldsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">ประเภทการฝึก *</label>
+            <select id="regCategory" onchange="loadUnitOptions()" required class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+              <option value="">-- เลือกประเภทการฝึก --</option>
+              <option value="ทหารใหม่">ทหารใหม่ (ทั่วไป)</option>
+              <option value="ทหารใหม่เฉพาะหน้าที่">ทหารใหม่เฉพาะหน้าที่</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">กองทัพภาค / ส่วนกลาง *</label>
+            <select id="regParentHq" onchange="loadUnitOptions()" required class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+              <option value="">-- เลือก ทภ. / นขต. --</option>
+              <option value="ทภ.1">กองทัพภาคที่ 1</option>
+              <option value="ทภ.2">กองทัพภาคที่ 2</option>
+              <option value="ทภ.3">กองทัพภาคที่ 3</option>
+              <option value="ทภ.4">กองทัพภาคที่ 4</option>
+              <option value="นขต.ทบ.">หน่วยขึ้นตรงกองทัพบก (นขต.ทบ.)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">หน่วยฝึก *</label>
+            <select id="regUnit" required class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+              <option value="">-- เลือก ทภ. ก่อน --</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">ระดับสิทธิ์รายงาน *</label>
+          <select id="regLevel" required class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-green-500 focus:bg-white transition">
+            <option value="U">ระดับหน่วยฝึก (U)</option>
+            <option value="H">ระดับ ทภ. / นขต. (H)</option>
+            <option value="U_AND_H">เป็นทั้งหน่วยฝึก (U) และ ระดับ ทภ./นขต. (H)</option>
+          </select>
+        </div>
+
+        <div class="p-3 bg-emerald-50/60 border border-emerald-200/80 rounded-2xl space-y-1.5">
+          <label class="flex items-start cursor-pointer text-xs text-slate-700 font-medium">
+            <input type="checkbox" id="regConsent" onchange="toggleSubmitBtn()" class="mt-0.5 mr-2 text-green-600 rounded focus:ring-green-500">
+            <span>ข้าพเจ้ายินยอมให้ระบบ TRMS ยศ.ทบ. จัดเก็บและใช้ข้อมูลส่วนบุคคลข้างต้นเพื่อการบริหารจัดการรายงานผลการฝึกทหารใหม่ตามระเบียบของทางราชการ</span>
+          </label>
+        </div>
+
+        <button type="submit" id="btnRegisterSubmit" disabled class="w-full py-3 bg-slate-300 text-slate-500 font-bold text-xs rounded-xl transition cursor-not-allowed">
+          <i class="fa-solid fa-paper-plane mr-2"></i>ส่งข้อมูลลงทะเบียน
+        </button>
+      </form>
+    </div>
+
+    <!-- 4. DASHBOARD -->
+    <div id="sectionDashboard" class="hidden space-y-4">
+      <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div class="flex items-center space-x-3.5">
+            <div class="relative">
+              <img id="user-avatar-header" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Avatar" class="w-12 h-12 rounded-2xl object-cover border-2 border-slate-200/80 shadow-sm">
+              <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h3 class="font-bold text-slate-800 text-sm sm:text-base" id="userDisplayName">-</h3>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5" id="userPosition">-</p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between w-full sm:w-auto sm:justify-end gap-2 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-slate-100">
+            <button onclick="openEditProfileModal()" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 border border-slate-200/80 hover:bg-slate-200 transition flex items-center">
+              <i class="fa-solid fa-pen-to-square mr-1.5 text-[10px] text-green-700"></i>แก้ไขข้อมูล
+            </button>
+            <span class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 text-slate-700 border border-slate-200/60" id="userUnitName">-</span>
+            <div id="switchRoleContainer" class="hidden">
+              <button onclick="toggleRoleContext()" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200/80 hover:bg-rose-100 transition flex items-center">
+                <i class="fa-solid fa-right-left mr-1.5 text-[10px]"></i>สลับโหมด H
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-xs sm:text-sm text-slate-800 flex items-center">
+              <i class="fa-solid fa-list-check text-green-700 mr-2"></i>เลือกแบบรายงาน
+            </h4>
+            <span class="text-[11px] text-slate-400 font-medium" id="formListCount">รายการพร้อมใช้งาน</span>
+          </div>
+
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input type="text" id="formSearchInput" onkeyup="filterForms()" placeholder="ค้นหาชื่อแบบรายงาน หรือ รหัสฟอร์ม (เช่น A01U)..." class="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-600 transition">
+          </div>
+
+          <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar">
+            <button onclick="setCategoryFilter('ALL')" id="filterBtn_ALL" class="filter-btn active px-3 py-1 rounded-xl font-semibold bg-green-700 text-white transition whitespace-nowrap">ทั้งหมด</button>
+            <button onclick="setCategoryFilter('ทหารใหม่')" id="filterBtn_ทหารใหม่" class="filter-btn px-3 py-1 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">ทหารใหม่</button>
+            <button onclick="setCategoryFilter('ทหารใหม่เฉพาะหน้าที่')" id="filterBtn_เฉพาะหน้าที่" class="filter-btn px-3 py-1 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">เฉพาะหน้าที่</button>
+            <button onclick="setCategoryFilter('ทั่วไป')" id="filterBtn_ทั่วไป" class="filter-btn px-3 py-1 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">รายงานประจำวัน</button>
+          </div>
+        </div>
+
+        <div id="formMenuListContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-1"></div>
+      </div>
+    </div>
+
+    <!-- 5. DYNAMIC FORM ENGINE -->
+    <div id="sectionFormEngine" class="hidden bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3.5">
+        <div class="flex items-center space-x-2.5">
+          <span id="formBadge" class="text-xs font-bold px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 border border-slate-200">A01U</span>
+          <h3 id="formTitle" class="font-bold text-slate-800 text-sm sm:text-base">-</h3>
+        </div>
+        <button onclick="backToDashboard()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 hover:bg-slate-200 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <form id="activeDynamicForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+        <div id="dynamicQuestionsContainer" class="space-y-3.5"></div>
+
+        <div class="pt-4 flex space-x-2 border-t">
+          <button type="button" onclick="backToDashboard()" class="w-1/3 py-2.5 bg-slate-100 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-200 transition">ยกเลิก</button>
+          <button type="submit" class="w-2/3 py-2.5 btn-u text-white font-bold text-xs rounded-xl shadow-md transition" id="btnSubmitForm">
+            <i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกข้อมูล
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </main>
+
+  <!-- MODAL EDIT PROFILE -->
+  <div id="modalEditProfile" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-xl border border-slate-100">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-slate-800 text-base flex items-center">
+          <i class="fa-solid fa-user-pen text-green-700 mr-2"></i>แก้ไขรายละเอียดส่วนตัว
+        </h3>
+        <button onclick="closeEditProfileModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <form id="formEditProfile" onsubmit="handleUpdateProfile(event)" class="space-y-3 text-xs">
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ยศ</label>
+            <input type="text" id="editRank" required class="w-full p-2 border rounded-xl bg-slate-50">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ชื่อ</label>
+            <input type="text" id="editFirstName" required class="w-full p-2 border rounded-xl bg-slate-50">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">นามสกุล</label>
+            <input type="text" id="editLastName" required class="w-full p-2 border rounded-xl bg-slate-50">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ตำแหน่ง ชกท.</label>
+          <input type="text" id="editPosition" required class="w-full p-2 border rounded-xl bg-slate-50">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ตำแหน่งในการฝึก</label>
+          <input type="text" id="editTrainingPosition" required class="w-full p-2 border rounded-xl bg-slate-50">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">เบอร์โทรศัพท์</label>
+          <input type="tel" id="editPhone" required class="w-full p-2 border rounded-xl bg-slate-50">
+        </div>
+
+        <div class="pt-3 flex space-x-2 border-t">
+          <button type="button" onclick="closeEditProfileModal()" class="w-1/2 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl">ยกเลิก</button>
+          <button type="submit" class="w-1/2 py-2.5 bg-green-700 text-white font-bold rounded-xl shadow-md hover:bg-green-800">บันทึกแก้ไข</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT CORE LOGIC -->
+  <script>
+    const LIFF_ID = "2010794688-WbZi5B3g";
+    const GAS_API_URL = "ใส่_WEB_APP_URL_ที่นี่"; // 🚨 ใส่ Web App URL ของพี่แม็กซ์ที่นี่
+
+    let currentUser = {
+      lineUid: localStorage.getItem('trms_line_uid') || "",
+      displayName: "",
+      pictureUrl: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+    };
+    let dbUserProfile = null;
+    let currentRoleContext = 'U';
+    let currentActiveForm = null;
+    let rawFormMasterList = [];
+    let activeCategoryFilter = 'ALL';
+    let timerInterval = null;
+
+    async function callGasApi(actionName, payloadData = {}) {
+      try {
+        const response = await fetch(GAS_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: actionName, ...payloadData })
+        });
+        return await response.json();
+      } catch (err) {
+        console.error(`API Error [${actionName}]:`, err);
+        return { status: "ERROR", message: err.toString() };
+      }
+    }
+
+    // ==========================================
+    // 1. STRICT AUTHENTICATION FLOW
+    // ==========================================
+    window.onload = async function() {
+      showSection('sectionLoading');
+      
+      try {
+        if (typeof liff === 'undefined') throw new Error("SDK Not Loaded");
+
+        await liff.init({ liffId: LIFF_ID });
+
+        // กรณีที่ 1: เปิดในแอป LINE หรือ ล็อกอินไว้แล้ว
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          if (profile && profile.userId) {
+            currentUser.lineUid = profile.userId;
+            currentUser.displayName = profile.displayName || "LINE User";
+            currentUser.pictureUrl = profile.pictureUrl || currentUser.pictureUrl;
+
+            localStorage.setItem('trms_line_uid', currentUser.lineUid);
+            document.getElementById('user-avatar-header').src = currentUser.pictureUrl;
+            document.getElementById('regLineAvatar').src = currentUser.pictureUrl;
+
+            await checkUserInDB();
+            return;
+          }
+        }
+
+        // กรณีที่ 2: ถ้ามี LINE ID / Phone สำรองใน LocalStorage
+        const savedPhone = localStorage.getItem('trms_user_phone');
+        if (currentUser.lineUid || savedPhone) {
+          await checkUserInDB();
+          return;
+        }
+
+        // กรณีที่ 3: เปิดบนเว็บทั่วไป ➔ บังคับแสดงหน้า Gateway Login เสมอ!
+        showSection('sectionLoginGateway');
+
+      } catch (err) {
+        console.warn("LIFF Auth Init:", err);
+        showSection('sectionLoginGateway');
+      }
+    };
+
+    function loginWithLine() {
+      if (typeof liff !== 'undefined') {
+        liff.login({ redirectUri: window.location.href });
+      } else {
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อ LINE SDK ได้', 'error');
+      }
+    }
+
+    async function handlePhoneLogin(e) {
+      e.preventDefault();
+      const phoneInput = document.getElementById('inputLoginPhone').value.trim();
+      if (!phoneInput) return;
+
+      Swal.fire({ title: 'กำลังตรวจสอบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      localStorage.setItem('trms_user_phone', phoneInput);
+      await checkUserInDB();
+      Swal.close();
+    }
+
+    /**
+     * ตรวจสอบสิทธิ์ใน Google Sheet (ยิงไปหา Code.gs)
+     */
+    async function checkUserInDB() {
+      const savedPhone = localStorage.getItem('trms_user_phone') || "";
+      const targetUid = currentUser.lineUid || localStorage.getItem('trms_line_uid') || "";
+
+      const res = await callGasApi("checkUserProfile", {
+        lineUserId: targetUid,
+        phoneNumber: savedPhone
+      });
+
+      const subtitle = document.getElementById('headerSubtitle');
+      if (subtitle) {
+        subtitle.innerHTML = `<i class="fa-solid fa-circle-check text-[10px] text-green-300"></i><span>เชื่อมต่อระบบเรียบร้อย</span>`;
+      }
+
+      if (res && res.status === "SUCCESS") {
+        dbUserProfile = res.data;
+        const userStatus = (dbUserProfile.Status || "").toString().toUpperCase().trim();
+
+        if (userStatus === "PENDING") {
+          document.getElementById('pendingName').innerText = dbUserProfile.Full_Name_Display || '-';
+          document.getElementById('pendingUnit').innerText = dbUserProfile.Primary_Unit || '-';
+          document.getElementById('pendingTime').innerText = dbUserProfile.Registered_At || '-';
+          showSection('sectionPending');
+        } else if (userStatus === "ACTIVE") {
+          setupUserDashboard();
+        } else {
+          showSection('sectionRegister');
+        }
+      } else {
+        // 🔴 หากยิงเช็กแล้วตอบกลับว่า NOT_FOUND จริงๆ จึงค่อยเด้งเข้าหน้าสมัคร
+        showSection('sectionRegister');
+      }
+    }
+
+    // ==========================================
+    // 2. DASHBOARD & FORM ENGINE LOGIC
+    // ==========================================
+    function toggleUserTypeForm() {
+      const userType = document.querySelector('input[name="userTypeGroup"]:checked').value;
+      const unitFieldsContainer = document.getElementById('unitFieldsContainer');
+      const fieldTrainingPosition = document.getElementById('fieldTrainingPosition');
+
+      if (userType === 'STAFF') {
+        document.getElementById('regTrainingPosition').required = false;
+        document.getElementById('regCategory').required = false;
+        document.getElementById('regParentHq').required = false;
+        document.getElementById('regUnit').required = false;
+        
+        unitFieldsContainer.classList.add('hidden');
+        fieldTrainingPosition.classList.add('hidden');
+      } else {
+        document.getElementById('regTrainingPosition').required = true;
+        document.getElementById('regCategory').required = true;
+        document.getElementById('regParentHq').required = true;
+        document.getElementById('regUnit').required = true;
+
+        unitFieldsContainer.classList.remove('hidden');
+        fieldTrainingPosition.classList.remove('hidden');
+      }
+    }
+
+    function toggleSubmitBtn() {
+      const consent = document.getElementById('regConsent').checked;
+      const btn = document.getElementById('btnRegisterSubmit');
+      if (consent) {
+        btn.disabled = false;
+        btn.className = "w-full py-3 bg-green-700 text-white font-bold text-xs rounded-xl shadow-md hover:bg-green-800 transition cursor-pointer";
+      } else {
+        btn.disabled = true;
+        btn.className = "w-full py-3 bg-slate-300 text-slate-500 font-bold text-xs rounded-xl transition cursor-not-allowed";
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      Swal.fire({ title: 'กำลังบันทึกข้อมูลลงทะเบียน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      const userTypeGroup = document.querySelector('input[name="userTypeGroup"]:checked').value;
+      const phoneNum = document.getElementById('regPhone').value;
+
+      localStorage.setItem('trms_user_phone', phoneNum);
+      if (currentUser.lineUid) {
+        localStorage.setItem('trms_line_uid', currentUser.lineUid);
+      }
+
+      const formData = {
+        userTypeGroup: userTypeGroup,
+        lineUserId: currentUser.lineUid || localStorage.getItem('trms_line_uid') || "",
+        lineIdName: currentUser.displayName || "LINE User",
+        customLineId: document.getElementById('regCustomLine').value,
+        rank: document.getElementById('regRank').value,
+        firstName: document.getElementById('regFirstName').value,
+        lastName: document.getElementById('regLastName').value,
+        position: document.getElementById('regPosition').value,
+        trainingPosition: (userTypeGroup === 'STAFF') ? "เจ้าหน้าที่ส่วนกลาง" : document.getElementById('regTrainingPosition').value,
+        phoneNumber: phoneNum,
+        category: (userTypeGroup === 'STAFF') ? "ส่วนกลาง" : document.getElementById('regCategory').value,
+        parentHq: (userTypeGroup === 'STAFF') ? "นขต.ทบ." : document.getElementById('regParentHq').value,
+        primaryUnit: (userTypeGroup === 'STAFF') ? "ยศ.ทบ." : document.getElementById('regUnit').value,
+        level: document.getElementById('regLevel').value
+      };
+
+      const res = await callGasApi("registerNewUser", { formData: formData });
+
+      Swal.close();
+      if (res.status === "SUCCESS") {
+        Swal.fire({
+          icon: 'success',
+          title: 'ลงทะเบียนสำเร็จ!',
+          text: res.message,
+          confirmButtonText: 'ตกลง'
+        }).then(() => {
+          window.location.reload();
+        });
+      } else {
+        Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+      }
+    }
+
+    function setupUserDashboard() {
+      document.getElementById('userDisplayName').innerText = dbUserProfile.Full_Name_Display;
+      document.getElementById('userPosition').innerText = dbUserProfile.Position;
+      document.getElementById('userUnitName').innerText = dbUserProfile.Primary_Unit;
+
+      if (dbUserProfile.Level === "U_AND_H" || dbUserProfile.Level === "A") {
+        document.getElementById('switchRoleContainer').classList.remove('hidden');
+      }
+
+      applyTheme(dbUserProfile.Level.includes('H') && currentRoleContext === 'H' ? 'H' : 'U');
+      renderFormMenu();
+      showSection('sectionDashboard');
+    }
+
+    function openEditProfileModal() {
+      if (!dbUserProfile) return;
+      document.getElementById('editRank').value = dbUserProfile.Rank || '';
+      document.getElementById('editFirstName').value = dbUserProfile.FirstName || '';
+      document.getElementById('editLastName').value = dbUserProfile.LastName || '';
+      document.getElementById('editPosition').value = dbUserProfile.Position || '';
+      document.getElementById('editTrainingPosition').value = dbUserProfile.Training_Position || '';
+      document.getElementById('editPhone').value = dbUserProfile.Phone_Number || '';
+      document.getElementById('modalEditProfile').classList.remove('hidden');
+    }
+
+    function closeEditProfileModal() {
+      document.getElementById('modalEditProfile').classList.add('hidden');
+    }
+
+    async function handleUpdateProfile(e) {
+      e.preventDefault();
+      Swal.fire({ title: 'กำลังบันทึกการแก้ไข...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      const updateData = {
+        lineUserId: currentUser.lineUid,
+        rank: document.getElementById('editRank').value,
+        firstName: document.getElementById('editFirstName').value,
+        lastName: document.getElementById('editLastName').value,
+        position: document.getElementById('editPosition').value,
+        trainingPosition: document.getElementById('editTrainingPosition').value,
+        phoneNumber: document.getElementById('editPhone').value
+      };
+
+      const res = await callGasApi("updateUserProfile", { updateData: updateData });
+
+      Swal.close();
+      if (res.status === "SUCCESS") {
+        Swal.fire('สำเร็จ', res.message, 'success').then(() => {
+          closeEditProfileModal();
+          checkUserInDB();
+        });
+      } else {
+        Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+      }
+    }
+
+    function applyTheme(level) {
+      currentRoleContext = level;
+      const header = document.getElementById('mainHeader');
+      const badge = document.getElementById('levelBadge');
+      const submitBtn = document.getElementById('btnSubmitForm');
+
+      if (level === 'H') {
+        header.className = 'header-h text-white p-4 shadow-sm sticky top-0 z-50';
+        badge.className = 'px-3 py-1 text-xs font-bold rounded-full bg-white text-rose-800 shadow-sm border border-rose-200';
+        badge.innerText = 'ระดับ ทภ./นขต. (H)';
+        if (submitBtn) submitBtn.className = 'w-2/3 py-2.5 btn-h text-white font-bold text-xs rounded-xl shadow-md transition';
+      } else {
+        header.className = 'header-u text-white p-4 shadow-sm sticky top-0 z-50';
+        badge.className = 'px-3 py-1 text-xs font-bold rounded-full bg-white text-green-800 shadow-sm border border-green-200';
+        badge.innerText = 'ระดับ หน่วยฝึก (U)';
+        if (submitBtn) submitBtn.className = 'w-2/3 py-2.5 btn-u text-white font-bold text-xs rounded-xl shadow-md transition';
+      }
+      badge.classList.remove('hidden');
+    }
+
+    function toggleRoleContext() {
+      currentRoleContext = (currentRoleContext === 'U') ? 'H' : 'U';
+      applyTheme(currentRoleContext);
+      renderFormMenu();
+    }
+
+    async function renderFormMenu() {
+      const container = document.getElementById('formMenuListContainer');
+      if (!container) return;
+      container.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดรายการแบบรายงาน...</div>';
+
+      const suffix = (dbUserProfile.Level === 'A') ? '' : currentRoleContext;
+      const res = await callGasApi("getFormMasterList", { levelContext: suffix });
+
+      if (!res || res.status !== "SUCCESS" || !res.data) {
+        rawFormMasterList = [];
+      } else {
+        rawFormMasterList = res.data;
+      }
+      filterForms();
+      startLiveCountdown();
+    }
+
+    function filterForms() {
+      const container = document.getElementById('formMenuListContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const searchKeyword = (document.getElementById('formSearchInput')?.value || '').toLowerCase().trim();
+
+      const filtered = rawFormMasterList.filter(f => {
+        const formStatus = (f.status || '').toUpperCase().trim();
+        if (formStatus === 'HIDDEN') return false;
+
+        const matchesCat = (activeCategoryFilter === 'ALL') || 
+                           (f.category && f.category.includes(activeCategoryFilter));
+
+        const matchesSearch = !searchKeyword || 
+                              f.code.toLowerCase().includes(searchKeyword) || 
+                              f.name.toLowerCase().includes(searchKeyword) || 
+                              (f.desc && f.desc.toLowerCase().includes(searchKeyword));
+
+        return matchesCat && matchesSearch;
+      });
+
+      const countEl = document.getElementById('formListCount');
+      if (countEl) countEl.innerText = `พร้อมใช้งาน ${filtered.length} รายการ`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 text-xs">ไม่พบแบบรายงานที่ตรงกับคำค้นหา</div>';
+        return;
+      }
+
+      filtered.forEach(f => {
+        const itemCard = document.createElement('div');
+        let formStatus = (f.status || '').toUpperCase().trim();
+        
+        let cardStyle = 'bg-white border-slate-200/80 shadow-sm cursor-pointer minimal-card';
+        let badgeHtml = '';
+        let clickEvent = () => loadDynamicForm(f.code, f.name);
+
+        if (formStatus === 'DISABLED') {
+          cardStyle = 'bg-slate-50/80 border-slate-200/60 opacity-60 cursor-not-allowed';
+          badgeHtml = `<span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-600"><i class="fa-solid fa-lock mr-1"></i>ยังไม่เปิด</span>`;
+          clickEvent = () => Swal.fire('แจ้งเตือน', 'แบบฟอร์มนี้ยังไม่เปิดให้เข้าใช้งานในขณะนี้', 'warning');
+        } else if (f.cutoff && f.cutoff !== '-' && formStatus === 'ACTIVE') {
+          const timeInfo = calculateRemainingTime(f.cutoff);
+          if (timeInfo && timeInfo.isExpired) {
+            cardStyle = 'bg-amber-50/30 border-amber-200/60 cursor-pointer minimal-card';
+            badgeHtml = `<span class="live-countdown text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800" data-cutoff="${f.cutoff}"><i class="fa-solid fa-clock mr-1"></i>หมดเวลา (${f.cutoff})</span>`;
+            clickEvent = () => Swal.fire('หมดเวลาบันทึก', `แบบรายงานนี้ปิดรับยอดประจำวันแล้วเมื่อเวลา ${f.cutoff}`, 'error');
+          } else if (timeInfo) {
+            badgeHtml = `<span class="live-countdown text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80" data-cutoff="${f.cutoff}"><i class="fa-solid fa-hourglass-half text-[9px] mr-1 animate-pulse"></i>${timeInfo.text}</span>`;
+          }
+        } else if (formStatus === 'EXPIRED') {
+          cardStyle = 'bg-amber-50/30 border-amber-200/60 cursor-pointer minimal-card';
+          badgeHtml = `<span class="live-countdown text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800" data-cutoff="${f.cutoff || '16:00'}"><i class="fa-solid fa-clock mr-1"></i>หมดเวลา (${f.cutoff || '16:00'})</span>`;
+          clickEvent = () => Swal.fire('หมดเวลาบันทึก', `แบบรายงานนี้ปิดรับยอดประจำวันแล้วเมื่อเวลา ${f.cutoff || '16:00 น.'}`, 'error');
+        } else {
+          const badgeBg = currentRoleContext === 'H' ? 'bg-rose-50 text-rose-700 border border-rose-200/60' : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60';
+          badgeHtml = `<span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${badgeBg}"><i class="fa-solid fa-circle-check mr-1"></i>เปิดรับรายงาน</span>`;
+        }
+
+        itemCard.className = `p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-3 ${cardStyle}`;
+        itemCard.onclick = clickEvent;
+
+        itemCard.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-600 border border-slate-200/80">${f.code}</span>
+              ${badgeHtml}
+            </div>
+            <h5 class="font-bold text-sm sm:text-base text-slate-800 leading-snug group-hover:text-green-700 transition">${f.name}</h5>
+            <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">${f.desc || 'ไม่มีคำอธิบายระบุ'}</p>
+          </div>
+          <div class="pt-2 border-t border-slate-100 flex items-center justify-end text-xs font-bold ${currentRoleContext==='H'?'text-rose-700':'text-green-700'}">
+            <span class="mr-1">${formStatus === 'DISABLED' ? 'ไม่พร้อมใช้งาน' : 'เข้าสู่แบบรายงาน'}</span>
+            <i class="fa-solid ${formStatus === 'DISABLED' ? 'fa-lock' : 'fa-arrow-right'} text-[11px]"></i>
+          </div>
+        `;
+
+        container.appendChild(itemCard);
+      });
+    }
+
+    function setCategoryFilter(cat) {
+      activeCategoryFilter = cat;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.className = 'filter-btn px-3 py-1 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap';
+      });
+      const activeBtn = document.getElementById(`filterBtn_${cat === 'ทหารใหม่เฉพาะหน้าที่' ? 'เฉพาะหน้าที่' : cat}`);
+      if (activeBtn) {
+        const activeBg = currentRoleContext === 'H' ? 'bg-rose-700 text-white' : 'bg-green-700 text-white';
+        activeBtn.className = `filter-btn active px-3 py-1 rounded-xl font-semibold ${activeBg} transition whitespace-nowrap`;
+      }
+      filterForms();
+    }
+
+    async function loadDynamicForm(formCode, formName) {
+      currentActiveForm = formCode;
+      document.getElementById('formBadge').innerText = formCode;
+      document.getElementById('formTitle').innerText = formName;
+      
+      Swal.fire({ title: 'กำลังโหลดแบบฟอร์ม...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      const res = await callGasApi("getFormSchema", { targetSheet: formCode });
+      
+      Swal.close();
+      if (res.status !== "SUCCESS") return Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+
+      const container = document.getElementById('dynamicQuestionsContainer');
+      container.innerHTML = '';
+
+      res.data.forEach((q) => {
+        const card = document.createElement('div');
+        card.className = 'p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-2';
+
+        let tooltipBtn = q.tooltip ? `<button type="button" onclick="showTooltip('${q.tooltip}')" class="text-blue-500 ml-1 text-xs"><i class="fa-solid fa-circle-info"></i></button>` : '';
+        let questionHeader = `<label class="block text-xs font-bold text-slate-800 leading-relaxed">${q.qTitle} ${tooltipBtn}</label>`;
+        let bodyHtml = '';
+
+        if (q.inputType === 'radio_with_sub') {
+          bodyHtml += `<div class="space-y-2 mt-2">`;
+          q.options.forEach((opt) => {
+            bodyHtml += `
+              <div>
+                <label class="inline-flex items-center text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input type="radio" name="${q.qId}" value="${opt}" required class="mr-2 text-green-600 focus:ring-green-500"> 
+                  ${opt}
+                </label>
+              </div>`;
+          });
+          bodyHtml += `</div>`;
+        } else if (q.inputType === 'number') {
+          bodyHtml = `<input type="number" name="${q.qId}" required placeholder="ระบุตัวเลข" class="w-full p-2.5 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">`;
+        } else {
+          bodyHtml = `<input type="text" name="${q.qId}" required placeholder="ระบุข้อความ" class="w-full p-2.5 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">`;
+        }
+
+        card.innerHTML = questionHeader + bodyHtml;
+        container.appendChild(card);
+      });
+
+      showSection('sectionFormEngine');
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      const formElement = document.getElementById('activeDynamicForm');
+      const formData = new FormData(formElement);
+      
+      let values = [
+        new Date().toLocaleString("th-TH"),
+        dbUserProfile.Full_Name_Display,
+        dbUserProfile.Primary_Unit
+      ];
+      let headers = ["Timestamp", "Submitted_By", "Unit_Code"];
+
+      for (let [key, value] of formData.entries()) {
+        headers.push(key);
+        values.push(value);
+      }
+
+      const payload = {
+        targetSheet: currentActiveForm,
+        lineUserId: currentUser.lineUid,
+        unitCode: dbUserProfile.Primary_Unit,
+        headers: headers,
+        values: values
+      };
+
+      const res = await callGasApi("submitFormPayload", { payload: payload });
+
+      Swal.close();
+      if (res.status === "SUCCESS") {
+        Swal.fire({ icon: 'success', title: 'สำเร็จ', text: res.message, confirmButtonText: 'ตกลง' })
+             .then(() => backToDashboard());
+      } else {
+        Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+      }
+    }
+
+    async function loadUnitOptions() {
+      const cat = document.getElementById('regCategory').value;
+      const hq = document.getElementById('regParentHq').value;
+      const unitSelect = document.getElementById('regUnit');
+
+      if (!cat || !hq) return;
+
+      unitSelect.innerHTML = '<option value="">กำลังโหลดรายชื่อหน่วย...</option>';
+      const res = await callGasApi("getUnitMasterList", { category: cat, parentHq: hq });
+
+      unitSelect.innerHTML = '<option value="">-- เลือกหน่วยฝึก --</option>';
+      if (res && res.data) {
+        res.data.forEach(u => {
+          unitSelect.innerHTML += `<option value="${u.unitCode}">${u.shortName}</option>`;
+        });
+      }
+    }
+
+    function calculateRemainingTime(cutoffStr) {
+      if (!cutoffStr || cutoffStr === '-') return null;
+      const now = new Date();
+      const timeParts = cutoffStr.split(':');
+      if (timeParts.length < 2) return null;
+
+      const targetTime = new Date();
+      targetTime.setHours(parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), 0, 0);
+
+      const diffMs = targetTime - now;
+      if (diffMs <= 0) return { isExpired: true };
+
+      const totalSeconds = Math.floor(diffMs / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      return {
+        isExpired: false,
+        text: `เหลืออีก ${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')} ชม. (ปิด ${cutoffStr})`
+      };
+    }
+
+    function startLiveCountdown() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        document.querySelectorAll('.live-countdown').forEach(el => {
+          const cutoff = el.getAttribute('data-cutoff');
+          if (cutoff) {
+            const res = calculateRemainingTime(cutoff);
+            if (res && !res.isExpired) {
+              el.innerHTML = `<i class="fa-solid fa-hourglass-half text-[9px] mr-1 animate-pulse"></i>${res.text}`;
+            }
+          }
+        });
+      }, 1000);
+    }
+
+    function showSection(id) {
+      ['sectionLoading', 'sectionLoginGateway', 'sectionPhoneLogin', 'sectionPending', 'sectionRegister', 'sectionDashboard', 'sectionFormEngine'].forEach(s => {
+        const el = document.getElementById(s);
+        if (el) el.classList.add('hidden');
+      });
+      const target = document.getElementById(id);
+      if (target) target.classList.remove('hidden');
+    }
+
+    function backToDashboard() {
+      showSection('sectionDashboard');
+    }
+
+    function showTooltip(msg) {
+      Swal.fire({ title: 'คำแนะนำการกรอก', text: msg, icon: 'info', confirmButtonText: 'เข้าใจแล้ว' });
+    }
+  </script>
+</body>
+</html>
