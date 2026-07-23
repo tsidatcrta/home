@@ -422,104 +422,97 @@
     }
 
     // ==========================================
-    // 1. STRICT AUTHENTICATION FLOW
+    // 1. INITIALIZATION ENGINE (แก้ไขระบบตรวจสิทธิ์ก่อนเปิดหน้าสมัคร)
     // ==========================================
     window.onload = async function() {
       showSection('sectionLoading');
-      
-      try {
-        if (typeof liff === 'undefined') throw new Error("SDK Not Loaded");
 
+      try {
         await liff.init({ liffId: LIFF_ID });
 
-        // กรณีที่ 1: เปิดในแอป LINE หรือ ล็อกอินไว้แล้ว
         if (liff.isLoggedIn()) {
+          // ✅ ดึง Profile LINE ให้เสร็จสมบูรณ์ก่อนเสมอ
           const profile = await liff.getProfile();
-          if (profile && profile.userId) {
-            currentUser.lineUid = profile.userId;
-            currentUser.displayName = profile.displayName || "LINE User";
-            currentUser.pictureUrl = profile.pictureUrl || currentUser.pictureUrl;
+          currentUser.lineUid = profile.userId || "";
+          currentUser.displayName = profile.displayName || "LINE User";
+          currentUser.pictureUrl = profile.pictureUrl || currentUser.pictureUrl;
 
-            localStorage.setItem('trms_line_uid', currentUser.lineUid);
+          if (document.getElementById('user-avatar-header')) {
             document.getElementById('user-avatar-header').src = currentUser.pictureUrl;
-            document.getElementById('regLineAvatar').src = currentUser.pictureUrl;
+          }
 
+          // เมื่อได้ Line UID ชัวร์ๆ แล้ว ค่อยเรียกเช็กใน Google Sheets
+          if (currentUser.lineUid !== "") {
             await checkUserInDB();
-            return;
+          } else {
+            console.warn("Line UID is empty after getProfile");
+            showSection('sectionRegister');
+          }
+
+        } else {
+          // ถ้าเปิดในแอป LINE แล้วยังไม่ล็อกอิน ให้สั่งล็อกอิน
+          if (liff.isInClient()) {
+            liff.login();
+          } else {
+            // โหมดทดสอบบน External Browser / PC
+            console.warn("External Browser Mode -> Mockup User");
+            currentUser.lineUid = "U123456789mockup";
+            currentUser.displayName = "Mock Tester";
+            await checkUserInDB();
           }
         }
-
-        // กรณีที่ 2: ถ้ามี LINE ID / Phone สำรองใน LocalStorage
-        const savedPhone = localStorage.getItem('trms_user_phone');
-        if (currentUser.lineUid || savedPhone) {
-          await checkUserInDB();
-          return;
-        }
-
-        // กรณีที่ 3: เปิดบนเว็บทั่วไป ➔ บังคับแสดงหน้า Gateway Login เสมอ!
-        showSection('sectionLoginGateway');
-
       } catch (err) {
-        console.warn("LIFF Auth Init:", err);
-        showSection('sectionLoginGateway');
+        console.error("LIFF Init Exception:", err);
+        // กรณีเกิด Error ร้ายแรงใน LIFF ค่อยให้กรอกสมัคร
+        showSection('sectionRegister');
       }
     };
 
-    function loginWithLine() {
-      if (typeof liff !== 'undefined') {
-        liff.login({ redirectUri: window.location.href });
-      } else {
-        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อ LINE SDK ได้', 'error');
-      }
-    }
-
-    async function handlePhoneLogin(e) {
-      e.preventDefault();
-      const phoneInput = document.getElementById('inputLoginPhone').value.trim();
-      if (!phoneInput) return;
-
-      Swal.fire({ title: 'กำลังตรวจสอบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-      localStorage.setItem('trms_user_phone', phoneInput);
-      await checkUserInDB();
-      Swal.close();
-    }
-
     /**
-     * ตรวจสอบสิทธิ์ใน Google Sheet (ยิงไปหา Code.gs)
+     * ค้นหาโปรไฟล์จาก Google Sheet ผ่าน Code.gs (แม่นยำ ไม่ส่งค่าว่าง)
      */
-    async function checkUserInDB() {
-      const savedPhone = localStorage.getItem('trms_user_phone') || "";
-      const targetUid = currentUser.lineUid || localStorage.getItem('trms_line_uid') || "";
-
-      const res = await callGasApi("checkUserProfile", {
-        lineUserId: targetUid,
-        phoneNumber: savedPhone
-      });
-
-      const subtitle = document.getElementById('headerSubtitle');
-      if (subtitle) {
-        subtitle.innerHTML = `<i class="fa-solid fa-circle-check text-[10px] text-green-300"></i><span>เชื่อมต่อระบบเรียบร้อย</span>`;
-      }
-
-      if (res && res.status === "SUCCESS") {
-        dbUserProfile = res.data;
-        const userStatus = (dbUserProfile.Status || "").toString().toUpperCase().trim();
-
-        if (userStatus === "PENDING") {
-          document.getElementById('pendingName').innerText = dbUserProfile.Full_Name_Display || '-';
-          document.getElementById('pendingUnit').innerText = dbUserProfile.Primary_Unit || '-';
-          document.getElementById('pendingTime').innerText = dbUserProfile.Registered_At || '-';
-          showSection('sectionPending');
-        } else if (userStatus === "ACTIVE") {
-          setupUserDashboard();
-        } else {
+    function checkUserInDB() {
+      return new Promise((resolve) => {
+        // 🛡️ Guard: ถ้าไม่มี Line UID ไม่ให้ส่งไปค้นหา
+        if (!currentUser.lineUid || currentUser.lineUid.trim() === "") {
+          console.warn("checkUserInDB aborted: Line UID is empty");
           showSection('sectionRegister');
+          resolve();
+          return;
         }
-      } else {
-        // 🔴 หากยิงเช็กแล้วตอบกลับว่า NOT_FOUND จริงๆ จึงค่อยเด้งเข้าหน้าสมัคร
-        showSection('sectionRegister');
-      }
+
+        google.script.run
+          .withSuccessHandler(res => {
+            const subtitle = document.getElementById('headerSubtitle');
+            if (subtitle) {
+              subtitle.innerHTML = `<i class="fa-solid fa-circle-check text-[10px] text-green-300"></i><span>เชื่อมต่อระบบเรียบร้อย</span>`;
+            }
+
+            if (res && res.status === "SUCCESS") {
+              dbUserProfile = res.data;
+              if (dbUserProfile.Status === "PENDING") {
+                document.getElementById('pendingName').innerText = dbUserProfile.Full_Name_Display || '-';
+                document.getElementById('pendingUnit').innerText = dbUserProfile.Primary_Unit || '-';
+                document.getElementById('pendingTime').innerText = dbUserProfile.Registered_At || '-';
+                showSection('sectionPending');
+              } else if (dbUserProfile.Status === "ACTIVE") {
+                setupUserDashboard(); // ✅ สมาชิก ACTIVE ให้พาเข้า Dashboard
+              } else {
+                showSection('sectionRegister');
+              }
+            } else {
+              // หาไม่เจอจริง ค่อยพาไปหน้าสมัคร
+              showSection('sectionRegister');
+            }
+            resolve();
+          })
+          .withFailureHandler(err => {
+            console.error("checkUserInDB Backend Error:", err);
+            showSection('sectionRegister');
+            resolve();
+          })
+          .checkUserProfile(currentUser.lineUid, "");
+      });
     }
 
     // ==========================================
