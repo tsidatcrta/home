@@ -405,9 +405,6 @@
     let activeCategoryFilter = 'ALL';
     let timerInterval = null;
 
-    /**
-     * Helper Function สำหรับเรียก API ไปยัง Google Apps Script (REST API)
-     */
     async function callGasApi(actionName, payloadData = {}) {
       try {
         const response = await fetch(GAS_API_URL, {
@@ -450,14 +447,15 @@
             console.warn("LIFF Profile get failed:", pErr);
           }
 
+          // เมื่ออยู่ในแอป LINE และดึงสิทธิ์สำเร็จ ให้ค้นหาโปรไฟล์ทันที
           await checkUserInDB();
 
         } else {
-          // หากรันในแอป LINE ให้สั่งล็อกอินทันที
+          // หากเปิดบน LINE Client แล้วยังไม่ล็อกอิน ให้สั่งล็อกอินอัตโนมัติ
           if (liff.isInClient()) {
             liff.login();
           } else {
-            // หากไม่มีสิทธิ์ LINE และไม่มีข้อมูลใน LocalStorage ให้เปิด Login Gateway
+            // หากเปิดบน PC/Browser ภายนอก และมี Cache LINE ID หรือ เบอร์โทร ให้ลองค้นหาเลย
             const savedPhone = localStorage.getItem('trms_user_phone') || "";
             if (currentUser.lineUid !== "" || savedPhone !== "") {
               await checkUserInDB();
@@ -468,7 +466,12 @@
         }
       } catch (err) {
         console.error("LIFF Init Exception:", err);
-        await checkUserInDB();
+        const savedPhone = localStorage.getItem('trms_user_phone') || "";
+        if (currentUser.lineUid !== "" || savedPhone !== "") {
+          await checkUserInDB();
+        } else {
+          showSection('sectionLoginGateway');
+        }
       }
     };
 
@@ -526,7 +529,7 @@
           showSection('sectionRegister');
         }
       } else {
-        // หากไม่พบข้อมูลผู้ใช้ในระบบเลย ให้ไปหน้าสมัครสมาชิกใหม่
+        // หากค้นหาด้วย LINE ID และเบอร์โทรแล้วไม่พบในชีตจริง จึงเปิดหน้าสมัครใหม่
         showSection('sectionRegister');
       }
     }
